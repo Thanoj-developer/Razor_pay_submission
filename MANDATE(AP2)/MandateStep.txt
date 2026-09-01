@@ -1,0 +1,8 @@
+So your snippet — create_mandate building a signed statement like "I'm authorized to spend up to ₹1000 for this item" — is exactly AP2's core primitive, not part of the ACP checkout conversation. The core primitive is the Mandate: a cryptographically signed JSON credential that proves a specific human authorized a specific agent to make a specific kind of paymen
+
+Intent Mandate — proves the user asked for a purchase (broad conditions, e.g. "buy me sneakers under ₹5000 if in stock") 
+payram
+Cart Mandate — locks in the merchant's offer (specific item + price the user reviewed/approved) 
+payram
+Payment Mandate — executes the trade, and is what actually goes to the payment network.
+ The Payment Mandate is derived from the Cart or Intent Mandate and contains a minimal subset suitable for the network: hashed payment-method reference, transaction amount, a flag indicating human-present vs human-not-present, and a pointer to the upstream Cart Mandate. It does not expose the user's PII or the cart's full contents to the card network.
