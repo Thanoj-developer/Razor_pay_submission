@@ -287,39 +287,6 @@ app.get('/', (req, res) => {
             background: rgba(255, 255, 255, 0.12);
         }
 
-        /* Quick Pills */
-        .quick-pills-row {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 14px;
-        }
-        .pills-label {
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: #6b7280;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .pill {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #d1d5db;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-        .pill:hover {
-            background: rgba(99, 102, 241, 0.15);
-            border-color: rgba(99, 102, 241, 0.4);
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
-
         /* ── Assistant Chat / Response Box ── */
         .chat-box {
             background: var(--bg-card);
@@ -532,15 +499,6 @@ app.get('/', (req, res) => {
                 </button>
             </div>
 
-            <!-- Quick Action Pills -->
-            <div class="quick-pills-row">
-                <span class="pills-label">Quick Prompts:</span>
-                <span class="pill" onclick="setQuery('Launch http://localhost:5173/')">🌐 Launch Local Catalog</span>
-                <span class="pill" onclick="setQuery('Click on buy now for Converse Street Sneaker')">👟 Buy Converse</span>
-                <span class="pill" onclick="setQuery('Click on buy now for Nike Air Jordan 1 Low')">👟 Buy Nike Jordan</span>
-                <span class="pill" onclick="setQuery('Open Amazon')">🛍️ Open Amazon</span>
-                <span class="pill" onclick="setQuery('Book this product')">📦 Book Product</span>
-            </div>
         </div>
 
         <!-- Assistant Chat & Confirmation -->
