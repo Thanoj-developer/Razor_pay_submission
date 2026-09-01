@@ -435,21 +435,39 @@ app.get('/', (req, res) => {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(10px);
             z-index: 9999;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
         .modal-card {
             background: #11141c;
             border: 1px solid rgba(99, 102, 241, 0.35);
             border-radius: 16px;
             padding: 28px;
-            width: 360px;
-            box-shadow: 0 0 50px rgba(99, 102, 241, 0.2);
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.25);
             color: #ffffff;
             animation: fadeIn 0.25s ease-out;
+        }
+
+        /* Trusted Consent Modal Style */
+        .consent-modal-card {
+            background: #0e121a;
+            border: 1.5px solid rgba(99, 102, 241, 0.5);
+            border-radius: 18px;
+            padding: 24px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.3);
+            color: #ffffff;
+            animation: fadeIn 0.25s ease-out;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         @keyframes fadeIn {
@@ -488,7 +506,7 @@ app.get('/', (req, res) => {
                     type="text" 
                     id="smartQueryInput" 
                     class="search-input" 
-                    placeholder="Type command e.g. 'Launch http://localhost:5173/' or 'Click on buy now for Converse'..."
+                    placeholder="Type command e.g. 'Click on buy now for Converse' or 'Launch http://localhost:5173/'..."
                     autofocus
                 >
                 <button id="classifyOnlyBtn" class="classify-only-btn" title="Classify intent without running">
@@ -498,7 +516,6 @@ app.get('/', (req, res) => {
                     🚀 Execute
                 </button>
             </div>
-
         </div>
 
         <!-- Assistant Chat & Confirmation -->
@@ -532,6 +549,52 @@ app.get('/', (req, res) => {
                     </button>
                 </div>
                 <textarea id="automationLogs" class="terminal-box" readonly placeholder="Real-time execution logs will stream here..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- TRUSTED CONSENT SURFACE MODAL (AP2 Protocol on Port 6003)            -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <div id="cartConsentModal" class="modal-overlay">
+        <div class="consent-modal-card">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                <div>
+                    <div style="font-size: 1.05rem; font-weight: 800; color: #a5b4fc; display: flex; align-items: center; gap: 8px;">
+                        🛡️ TRUSTED CONSENT SURFACE
+                    </div>
+                    <div style="font-size: 0.76rem; color: #9ca3af; margin-top: 2px;">
+                        Cart Assembly Review &amp; Human Authorization (AP2 Protocol)
+                    </div>
+                </div>
+                <span id="consentCloseBtn" style="color: #6b7280; font-size: 1.2rem; cursor: pointer;">&times;</span>
+            </div>
+
+            <!-- Assembled Product Card -->
+            <div style="display: flex; gap: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 12px; align-items: center;">
+                <img id="consentProductImg" src="" alt="Product Photo" style="width: 88px; height: 88px; object-fit: contain; background: #ffffff; border-radius: 8px; padding: 4px; flex-shrink: 0;">
+                <div style="display: flex; flex-direction: column; gap: 3px;">
+                    <div id="consentProductName" style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">Product Name</div>
+                    <div id="consentProductSku" style="font-size: 0.75rem; color: #9ca3af;">SKU: shoe_007</div>
+                    <div id="consentMerchantName" style="font-size: 0.75rem; color: #818cf8; font-weight: 600;">Merchant: Razorpay ACP Store</div>
+                    <div id="consentProductPrice" style="font-size: 1.15rem; font-weight: 800; color: #34d399; margin-top: 2px;">₹1299 INR</div>
+                </div>
+            </div>
+
+            <!-- Security & Protocol Notice -->
+            <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: #c7d2fe; line-height: 1.4;">
+                🔒 <strong>Cart Assembly Verified:</strong> By approving, you grant explicit consent for this transaction. The cryptographic Checkout Mandate will be signed in the next step.
+            </div>
+
+            <!-- Action Buttons: Reject vs Accept -->
+            <div style="display: flex; gap: 10px; margin-top: 4px;">
+                <button id="consentRejectBtn" style="flex: 1; padding: 11px 16px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
+                    ❌ Reject
+                </button>
+                <button id="consentAcceptBtn" style="flex: 2; padding: 11px 16px; background: linear-gradient(135deg, #10b981, #059669); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
+                    ✅ Accept &amp; Authorize Cart
+                </button>
             </div>
         </div>
     </div>
@@ -708,6 +771,15 @@ app.get('/', (req, res) => {
                 log('Step ' + d.step + ': ' + d.status + ' -> ' + detail, d.success !== false ? 'success' : 'error');
             });
 
+            // ── Cart Consent / Trusted Surface Popup (Port 6003) ──
+            es.addEventListener('cart_consent_prompt', async (e) => {
+                const d = JSON.parse(e.data);
+                log('[HITL] 🛡️ Trusted Consent Surface opened for: "' + (d.product?.name || 'Item') + '" (₹' + (d.product?.price || '') + ')', 'info');
+                const approved = await showCartConsentModal(d.product, d.cart, d.sessionId);
+                log('[HITL] User ' + (approved ? 'APPROVED' : 'REJECTED') + ' Cart Authorization.', approved ? 'success' : 'error');
+                await sendHitlResponse(d.sessionId, { approved, cart: d.cart });
+            });
+
             es.addEventListener('otp_prompt', async (e) => {
                 const d = JSON.parse(e.data);
                 log('[HITL] OTP verification code requested.', 'info');
@@ -743,7 +815,7 @@ app.get('/', (req, res) => {
                 }
 
                 if (d.inbox === 'AUTO_NAVIGATION' && (d.result?.status === 'completed' || d.result?.success)) {
-                    showSuccessModal(d.response || 'Purchase / action completed successfully!');
+                    showSuccessModal(d.response || 'Purchase completed successfully! Mandate ready.');
                 }
 
                 loadActiveTabs();
@@ -802,6 +874,49 @@ app.get('/', (req, res) => {
         }
         refreshTabsBtn.addEventListener('click', loadActiveTabs);
         loadActiveTabs();
+
+        // ── Trusted Consent Surface Modal Logic (Port 6003) ──
+        function showCartConsentModal(product, cart, sessionId) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('cartConsentModal');
+                const img = document.getElementById('consentProductImg');
+                const name = document.getElementById('consentProductName');
+                const sku = document.getElementById('consentProductSku');
+                const merchant = document.getElementById('consentMerchantName');
+                const price = document.getElementById('consentProductPrice');
+                const acceptBtn = document.getElementById('consentAcceptBtn');
+                const rejectBtn = document.getElementById('consentRejectBtn');
+                const closeBtn = document.getElementById('consentCloseBtn');
+
+                img.src = product.image || 'http://localhost:5173/images/green_sneaker.png';
+                name.textContent = product.name || 'Product';
+                sku.textContent = 'SKU: ' + (product.id || 'sku_001') + ' • ' + (product.category || 'General');
+                merchant.textContent = 'Merchant: ' + (product.merchantName || 'Razorpay ACP Store');
+                price.textContent = '₹' + (product.price || cart?.totalAmount || '0') + ' ' + (product.currency || 'INR');
+
+                modal.style.display = 'flex';
+
+                function cleanup() {
+                    modal.style.display = 'none';
+                    acceptBtn.onclick = null;
+                    rejectBtn.onclick = null;
+                    closeBtn.onclick = null;
+                }
+
+                acceptBtn.onclick = () => {
+                    cleanup();
+                    resolve(true);
+                };
+                rejectBtn.onclick = () => {
+                    cleanup();
+                    resolve(false);
+                };
+                closeBtn.onclick = () => {
+                    cleanup();
+                    resolve(false);
+                };
+            });
+        }
 
         // ── HITL Modals ──
         function showOtpModal(desc, sessionId) {
@@ -950,6 +1065,11 @@ app.get('/api/voice-route/stream', async (req, res) => {
   }
 
   const hitlCallbacks = {
+    onCartConsentPrompt: (cartPayload) => new Promise((resolve) => {
+      console.log(`[Smart Router HITL] Cart consent requested on localhost:6003 for: ${cartPayload.product?.name}`);
+      sendEvent('cart_consent_prompt', { ...cartPayload, sessionId });
+      hitlPending.set(sessionId + '_hitl', resolve);
+    }),
     onOtpPrompt: (action) => new Promise((resolve) => {
       sendEvent('otp_prompt', { index: action.index, name: action.name, sessionId });
       hitlPending.set(sessionId + '_hitl', resolve);
@@ -977,7 +1097,7 @@ app.get('/api/voice-route/stream', async (req, res) => {
         const confirmPrompt = `The user asked to perform: "${query}". This action was completed successfully. Write a 1-sentence natural confirmation response back to the user letting them know it's done. Keep it under 15 words.`;
         llmResponse = await getLlmResponse(confirmPrompt);
       } else {
-        const failPrompt = `The user asked to perform: "${query}". This action stopped. Write a 1-sentence natural response back to the user explaining that it stopped. Keep it under 15 words.`;
+        const failPrompt = `The user asked to perform: "${query}". This action stopped with reason: "${result?.reason || result?.error || 'rejected'}". Write a 1-sentence natural response back to the user explaining that it stopped. Keep it under 15 words.`;
         llmResponse = await getLlmResponse(failPrompt);
       }
     } catch (llmErr) {
@@ -1059,7 +1179,7 @@ app.post('/api/switch-tab', async (req, res) => {
   }
 });
 
-// Endpoint: Receive HITL response
+// Endpoint: Receive HITL response (supports boolean, object, or string)
 app.post('/api/voice-autonavigate/hitl-response', (req, res) => {
   const { sessionId, value } = req.body;
   if (!sessionId) return res.status(400).json({ success: false, error: 'sessionId required' });
@@ -1068,7 +1188,7 @@ app.post('/api/voice-autonavigate/hitl-response', (req, res) => {
   if (resolve) {
     hitlPending.delete(sessionId + '_hitl');
     resolve(value);
-    console.log(`[Smart Router HITL] Received response for session ${sessionId}: ${value}`);
+    console.log(`[Smart Router HITL] Received response for session ${sessionId}:`, typeof value === 'object' ? JSON.stringify(value) : value);
     res.json({ success: true });
   } else {
     res.status(404).json({ success: false, error: 'No pending HITL for this session' });

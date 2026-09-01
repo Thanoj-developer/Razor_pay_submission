@@ -1,40 +1,58 @@
-// src/mandate.ts
+// src/Mandate.ts
+import { KeyPair, signPayload } from './Crypto';
 
-export function createCartMandate(
-  params: {
-    userId: string;
-    agentId: string;
-    intentMandateId?: string;
-    merchantId: string;
-    items: Array<{ name: string; sku: string; unitPrice: number; quantity: number }>;
+export interface SpendLimit {
+  amount: number;
+  currency: string;
+}
+
+export interface IntentMandateSubject {
+  authorizedItem: string;
+  spendLimit: SpendLimit;
+}
+
+export interface Proof {
+  type: string;
+  created: string;
+  proofPurpose: string;
+  verificationMethod: string;
+  signatureValue: string;
+}
+
+export interface IntentMandate {
+  '@context': string[];
+  type: string[];
+  issuer: string;
+  issuanceDate: string;
+  credentialSubject: IntentMandateSubject;
+  proof: Proof;
+}
+
+export interface CartItem {
+  id?: string;
+  name: string;
+  sku?: string;
+  unitPrice: number;
+  quantity: number;
+}
+
+export interface CartMandateSubject {
+  merchantId: string;
+  merchantName?: string;
+  cart: {
+    items: CartItem[];
     currency: string;
-  },
-  signerKeyPair: KeyPair
-): CartMandate {
-  // 1. Compute the total from the actual items — never trust a
-  //    total passed in separately, always derive it.
-  const totalAmount = params.items.reduce(
-    (sum, i) => sum + i.unitPrice * i.quantity,
-    0
-  );
-
-  // 2. Build the unsigned payload
-  const unsigned: CartMandate = {
-    type: "CartMandate",
-    id: randomUUID(),
-    userId: params.userId,
-    agentId: params.agentId,
-    intentMandateId: params.intentMandateId,
-    cart: {
-      merchantId: params.merchantId,
-      items: params.items,
-      currency: params.currency,
-      totalAmount,
-    },
-    issuedAt: new Date().toISOString(),
+    totalAmount: number;
   };
+  status: string;
+}
 
-  // 3. Sign the payload — this is the "I'm authorized to..." proof
-  const signature = signPayload(unsigned, signerKeyPair);
-  return { ...unsigned, signature };
+export interface CartMandate {
+  '@context': string[];
+  type: string[];
+  issuer: string;
+  issuanceDate: string;
+  intentMandateId?: string;
+  credentialSubject: CartMandateSubject;
+  proof: Proof;
 }

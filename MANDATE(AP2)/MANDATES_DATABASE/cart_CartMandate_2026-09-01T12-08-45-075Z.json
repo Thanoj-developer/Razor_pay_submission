@@ -1,0 +1,36 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "CartMandate"
+  ],
+  "issuer": "did:example:user123456789",
+  "issuanceDate": "2026-09-01T12:08:45.072Z",
+  "credentialSubject": {
+    "merchantId": "merchant_acp_razorpay_001",
+    "merchantName": "Razorpay ACP Store",
+    "cart": {
+      "items": [
+        {
+          "id": "shoe_001",
+          "name": "Nike Air Jordan 1 Low",
+          "sku": "shoe_001",
+          "unitPrice": 1999,
+          "quantity": 1
+        }
+      ],
+      "currency": "INR",
+      "totalAmount": 1999
+    },
+    "status": "USER_CONSENT_APPROVED"
+  },
+  "proof": {
+    "type": "EcdsaSecp256r1Signature2019",
+    "created": "2026-09-01T12:08:45.072Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:example:user123456789#key-1",
+    "signatureValue": "MEQCID7LLnN4nL4kxFK+pZQQne0CCGtrJOX0/NmWkdtoLkaCAiBg8B7rziDxkXSrFDs9emP113xrpOBoVhJoxHe/hd3T3A=="
+  }
+}

@@ -1,0 +1,58 @@
+[
+  {
+    "filename": "cart_CartMandate_2026-09-01T12-08-45-075Z.json",
+    "type": "CartMandate",
+    "issuer": "did:example:user123456789",
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T12:08:45.072Z",
+    "storedAt": "2026-09-01T12:08:45.079Z"
+  },
+  {
+    "filename": "intent_IntentMandate_2026-09-01T12-08-45-067Z.json",
+    "type": "IntentMandate",
+    "issuer": "did:example:user123456789",
+    "item": "Nike Air Jordan 1 Low",
+    "amount": 1999,
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T12:08:45.064Z",
+    "storedAt": "2026-09-01T12:08:45.070Z"
+  },
+  {
+    "filename": "cart_CartMandate_2026-09-01T12-08-34-949Z.json",
+    "type": "CartMandate",
+    "issuer": "did:example:user123456789",
+    "item": "Converse Street Sneaker",
+    "amount": 1299,
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T12:08:34.947Z",
+    "storedAt": "2026-09-01T12:08:34.953Z"
+  },
+  {
+    "filename": "intent_IntentMandate_2026-09-01T12-08-34-936Z.json",
+    "type": "IntentMandate",
+    "issuer": "did:example:user123456789",
+    "item": "Converse Street Sneaker",
+    "amount": 1299,
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T12:08:34.930Z",
+    "storedAt": "2026-09-01T12:08:34.944Z"
+  },
+  {
+    "filename": "cart_CartMandate_2026-09-01T12-07-57-370Z.json",
+    "type": "CartMandate",
+    "issuer": "did:example:user123456789",
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T12:07:57.368Z",
+    "storedAt": "2026-09-01T12:07:57.373Z"
+  },
+  {
+    "filename": "intent_IntentMandate_2026-09-01T12-07-57-363Z.json",
+    "type": "IntentMandate",
+    "issuer": "did:example:user123456789",
+    "item": "Converse Street Sneaker",
+    "amount": 1299,
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T12:07:57.357Z",
+    "storedAt": "2026-09-01T12:07:57.365Z"
+  }
+]

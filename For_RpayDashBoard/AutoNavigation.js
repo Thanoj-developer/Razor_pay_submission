@@ -1,13 +1,24 @@
-// HITL-enabled AutoNavigation — supports OTP/human_prompt/option_select_prompt callbacks
+// HITL-enabled AutoNavigation — supports OTP/human_prompt/option_select_prompt/cart_consent_prompt callbacks
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:6001';
+
+const CATALOG_ITEMS = [
+  { id: "shoe_001", name: "Nike Air Jordan 1 Low", price: 1999, currency: "INR", image: "http://localhost:5173/images/air_jordan.png", category: "shoes" },
+  { id: "shoe_002", name: "Dify Magsic Chunky Sneaker", price: 1899, currency: "INR", image: "http://localhost:5173/images/chunky_sneaker.jpg", category: "shoes" },
+  { id: "shoe_003", name: "Classic Navy Suede Oxford", price: 999, currency: "INR", image: "http://localhost:5173/images/blue_suede.png", category: "shoes" },
+  { id: "shoe_004", name: "Casual Retro Green Sneaker", price: 649, currency: "INR", image: "http://localhost:5173/images/green_sneaker.png", category: "shoes" },
+  { id: "shoe_005", name: "Cult Sport Trail Runner", price: 899, currency: "INR", image: "http://localhost:5173/images/trail_running.png", category: "shoes" },
+  { id: "shoe_006", name: "Woodland Leather Boot", price: 1599, currency: "INR", image: "http://localhost:5173/images/blue_suede.png", category: "shoes" },
+  { id: "shoe_007", name: "Converse Street Sneaker", price: 1299, currency: "INR", image: "http://localhost:5173/images/green_sneaker.png", category: "shoes" }
+];
 
 /**
  * Run one step of auto-navigation.
  * @param {string} query - The user goal
  * @param {object} hitlCallbacks - Optional callbacks:
- *   onOtpPrompt(action) => Promise<string>          (returns OTP value)
- *   onHumanPrompt(action) => Promise<string>         (returns user input)
- *   onOptionSelect(action) => Promise<number>        (returns selected index)
+ *   onCartConsentPrompt(cartPayload) => Promise<{ approved: boolean }> (returns consent boolean)
+ *   onOtpPrompt(action) => Promise<string>                             (returns OTP value)
+ *   onHumanPrompt(action) => Promise<string>                           (returns user input)
+ *   onOptionSelect(action) => Promise<number>                          (returns selected index)
  * @returns step result object
  */
 async function runAutoNavigationStep(query, hitlCallbacks = {}) {
@@ -51,6 +62,107 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
     if (noneAction) {
       console.log(`[AutoNavigation Step] None action detected: ${noneAction.reason}`);
       return { success: true, status: 'halted', reason: noneAction.reason };
+    }
+
+    // --- HITL: Cart Consent / Trusted Consent Surface (AP2 Protocol on localhost:6003) ---
+    let isBuyAction = false;
+    let targetElement = null;
+
+    if (actionData.index !== undefined && (actionData.action === 'click' || !actionData.action)) {
+      try {
+        const domResp = await fetch('http://localhost:5000/dom-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'assignSelectorIndices' })
+        });
+        const domData = await domResp.json();
+        targetElement = domData.result?.selectorMap?.[actionData.index];
+        const elName = (targetElement?.name || '').toLowerCase();
+        const elSelector = (targetElement?.selector || '').toLowerCase();
+        if (elName.includes('buy') || elName.includes('order') || elSelector.includes('#buy-') || /buy|book|purchase|order/i.test(query)) {
+          isBuyAction = true;
+        }
+      } catch (_) {}
+    }
+
+    if (isBuyAction && hitlCallbacks.onCartConsentPrompt) {
+      console.log(`[AutoNavigation HITL] Buy action detected on index ${actionData.index}. Requesting Trusted Consent on localhost:6003...`);
+      
+      const cleanName = (targetElement?.name || '').replace(/^Buy\s+/i, '').trim();
+      const matched = CATALOG_ITEMS.find(c => 
+        (targetElement?.selector && targetElement.selector.includes(c.id)) ||
+        (cleanName && c.name.toLowerCase().includes(cleanName.toLowerCase())) ||
+        (query && query.toLowerCase().includes(c.name.toLowerCase()))
+      ) || CATALOG_ITEMS[6];
+
+      const product = {
+        id: matched.id,
+        name: matched.name,
+        price: targetElement?.price || matched.price,
+        currency: matched.currency || 'INR',
+        category: matched.category,
+        image: matched.image,
+        merchantName: 'Razorpay ACP Store'
+      };
+
+      const cart = {
+        cartId: 'cart_' + Math.random().toString(36).substring(2, 9),
+        merchantId: 'merchant_acp_razorpay_001',
+        merchantName: 'Razorpay ACP Store',
+        items: [{
+          id: product.id,
+          sku: product.id,
+          name: product.name,
+          unitPrice: product.price,
+          quantity: 1,
+          image: product.image
+        }],
+        totalAmount: product.price,
+        currency: product.currency,
+        status: 'PENDING_USER_CONSENT',
+        assembledAt: new Date().toISOString()
+      };
+
+      const consentResult = await hitlCallbacks.onCartConsentPrompt({ product, cart, action: actionData });
+      
+      const isApproved = consentResult === true || (consentResult && consentResult.approved === true) || (typeof consentResult === 'string' && consentResult.toLowerCase() === 'accept');
+      
+      if (!isApproved) {
+        console.log('[AutoNavigation HITL] User rejected cart consent on localhost:6003.');
+        return { success: false, status: 'halted', reason: 'Cart authorization was rejected by user on Trusted Consent Surface.' };
+      }
+
+      console.log('[AutoNavigation HITL] User approved cart consent on localhost:6003! Creating and signing cryptographic Mandate (AP2)...');
+
+      // --- AP2 Mandate Generation & Cryptographic Signing ---
+      let createdIntentMandate = null;
+      let createdCartMandate = null;
+      try {
+        const { createIntentMandate, createCartMandate } = require('../MANDATE(AP2)/Mandate');
+        
+        // 1. Create and sign Intent Mandate matching Expected_Mandate.json
+        createdIntentMandate = createIntentMandate({
+          authorizedItem: product.name,
+          amount: product.price,
+          currency: product.currency,
+          saveToDisk: true
+        });
+
+        // 2. Create and sign Cart Mandate
+        createdCartMandate = createCartMandate({
+          productId: product.id,
+          productName: product.name,
+          price: product.price,
+          currency: product.currency,
+          merchantId: 'merchant_acp_razorpay_001',
+          merchantName: 'Razorpay ACP Store',
+          saveToDisk: true
+        });
+
+        console.log(`[AutoNavigation AP2] ✅ Intent & Cart Mandates generated & signed in MANDATE(AP2)/MANDATES_DATABASE!`);
+      } catch (mandateErr) {
+        console.warn('[AutoNavigation AP2] Warning during mandate creation:', mandateErr.message);
+      }
     }
 
     // --- HITL: OTP / Human Prompt / Option Select ---
@@ -126,7 +238,7 @@ async function runAutoNavigationLoop(query, hitlCallbacks = {}, onStepLog = null
   let stepsCount = 0;
   let lastActionStr = '';
 
-  const isSingleActionQuery = /^(click|tap|press|select|choose)\b/i.test(query.trim());
+  const isSingleActionQuery = /^(click|tap|press|select|choose|buy|book|purchase|order)\b/i.test(query.trim());
 
   while (!done && stepsCount < 10) {
     stepsCount++;
@@ -159,18 +271,25 @@ async function runAutoNavigationLoop(query, hitlCallbacks = {}, onStepLog = null
 
     // If query is a direct single click action and it succeeded, finish
     if (isSingleActionQuery && result.status === 'step_executed') {
-      console.log(`[AutoNavigation Loop] Single-action click executed successfully. Marking complete.`);
+      console.log(`[AutoNavigation Loop] Single-action query executed successfully. Marking complete.`);
       logEntry.status = 'completed';
       done = true;
       break;
     }
 
-    // Wait 1.5 seconds to stabilize
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Delay 1.5s between steps to let browser stabilize
+    await new Promise(r => setTimeout(r, 1500));
   }
 
-  const finalStatus = stepsLog[stepsLog.length - 1]?.status || 'completed';
-  return { success: true, status: finalStatus, log: stepsLog };
+  const finalSuccess = stepsLog.length > 0 && stepsLog[stepsLog.length - 1].success;
+  return {
+    success: finalSuccess,
+    status: finalSuccess ? 'completed' : 'failed',
+    log: stepsLog
+  };
 }
 
-module.exports = { runAutoNavigationLoop, runAutoNavigationStep };
+module.exports = {
+  runAutoNavigationStep,
+  runAutoNavigationLoop
+};

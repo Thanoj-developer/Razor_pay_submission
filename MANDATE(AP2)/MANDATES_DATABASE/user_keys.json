@@ -1,0 +1,6 @@
+{
+  "userDid": "did:example:user123456789",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEkDQDesrbnPjaBAFmDpkxyrg+JDen\nakmmBd/f0hDVYbLoonuJB5y3Zoj//LjStvfobZkTXHHc3JFEATb8Ro59xQ==\n-----END PUBLIC KEY-----\n",
+  "privateKey": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQggd76KIX+cPHD6BYN\nEPLVoGXVg5xQIKsFxpKvQPJeRnChRANCAASQNAN6ytuc+NoEAWYOmTHKuD4kN6dq\nSaYF39/SENVhsuiie4kHnLdmiP/8uNK29+htmRNccdzckUQBNvxGjn3F\n-----END PRIVATE KEY-----\n",
+  "createdAt": "2026-09-01T12:07:57.356Z"
+}
