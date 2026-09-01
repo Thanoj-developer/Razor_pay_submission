@@ -2,12 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { chromium } = require('@playwright/test');
 const { getLlmResponse } = require('./LLM_FOR_VOICE');
 const { runOrchestrator } = require('./orcastrator');
 const { runAutoNavigationLoop } = require('./AutoNavigation');
-const { routeVoiceQuery, classifyQuery, INBOX } = require('./RouterLogic');
-const { synthesizeSpeech } = require('./Text-To-Speech');
+const { routeQuery, classifyQuery, INBOX } = require('./RouterLogic');
 
 // Load environment variables from .env files
 function loadEnv() {
@@ -43,1851 +41,931 @@ function loadEnv() {
 loadEnv();
 
 const app = express();
-const PORT = process.env.VOICE_PORT || 2003;
+const PORT = process.env.VOICE_PORT || 6003;
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:6001';
 
-// Enable CORS for all routes (necessary for frontend integration on port 2001/2002)
+// Enable CORS and JSON parsing
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-
-// Serve static assets/dashboard
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Root route: Serve a beautiful dashboard for the Voice commanding server
+// Root route: Modern Search-Based Smart Query Router Dashboard
 app.get('/', (req, res) => {
-  const { RtcTokenBuilder, RtcRole } = require('agora-token');
-  const appId = process.env.AGORA_APP_ID ? process.env.AGORA_APP_ID.replace(/"/g, '') : '';
-  const appCertificate = process.env.AGORA_APP_CERTIFICATE ? process.env.AGORA_APP_CERTIFICATE.replace(/"/g, '') : '';
-  const channelName = process.env.AGORA_CHANNEL ? process.env.AGORA_CHANNEL.replace(/"/g, '') : 'demo-channel';
-  
-  let dynamicToken = process.env.AGORA_TOKEN ? process.env.AGORA_TOKEN.replace(/"/g, '') : '';
-  
-  if (appId && appCertificate) {
-    try {
-      const expirationTimeInSeconds = 3600 * 24; // 24 hours
-      const currentTimestamp = Math.floor(Date.now() / 1000);
-      const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
-      
-      dynamicToken = RtcTokenBuilder.buildTokenWithUid(
-        appId,
-        appCertificate,
-        channelName,
-        1001,
-        RtcRole.PUBLISHER,
-        privilegeExpiredTs
-      );
-      console.log(`[Voice Server] Dynamically generated fresh token for client: ${dynamicToken.substring(0, 20)}...`);
-    } catch (err) {
-      console.error('[Voice Server] Failed to build token dynamically:', err.message);
-    }
-  }
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Query Router & Automation Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --bg-card: rgba(18, 22, 31, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(99, 102, 241, 0.25);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-orch: #f59e0b;
+            --accent-orch-bg: rgba(245, 158, 11, 0.12);
+            --accent-orch-border: rgba(245, 158, 11, 0.35);
+            --accent-autonav: #06b6d4;
+            --accent-autonav-bg: rgba(6, 182, 212, 0.12);
+            --accent-autonav-border: rgba(6, 182, 212, 0.35);
+            --accent-primary: #6366f1;
+            --accent-primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
 
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Voice Command Mode</title>
-        <!-- Import Agora RTC Web SDK -->
-        <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
-        <style>
-            body {
-                background-color: #151515;
-                margin: 0;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: flex-start;
-                overflow-y: auto;
-                font-family: Inter, system-ui, sans-serif;
-                color: white;
-                padding: 40px 0;
-                box-sizing: border-box;
-                gap: 24px;
-            }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-            /* --- Voice UI styles --- */
-            .voice-ui {
-                width: 760px;
-                height: 520px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-            }
+        body {
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15), transparent 45%),
+                radial-gradient(circle at 10% 80%, rgba(6, 182, 212, 0.08), transparent 35%),
+                radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.08), transparent 35%);
+            min-height: 100vh;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 32px 20px;
+        }
 
-            .voice-card {
-                position: relative;
-                width: 600px;
-                height: 360px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: radial-gradient(circle, rgba(90, 140, 180, 0.12), transparent 35%),
-                    linear-gradient(90deg, #171717, #211d1a, #171717);
-                overflow: hidden;
-                border-radius: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.05);
-                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-            }
+        .container {
+            width: 100%;
+            max-width: 860px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-            .outer-ring,
-            .inner-ring {
-                position: absolute;
-                border: 2px solid rgba(255, 255, 255, 0.08);
-                border-radius: 140px;
-                animation: ringPulse 2.6s ease-in-out infinite;
-                animation-play-state: paused;
-            }
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .header-title {
+            font-size: 1.85rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        .port-badge {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 6px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
 
-            .outer-ring {
-                width: 594px;
-                height: 300px;
-            }
+        /* ── Search Bar Hero ── */
+        .search-hero-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .search-hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #6366f1, #06b6d4, #f59e0b, transparent);
+            opacity: 0.8;
+        }
 
-            .inner-ring {
-                width: 455px;
-                height: 235px;
-                animation-delay: 0.3s;
-            }
+        /* Active Mode Banner inside Hero */
+        .mode-banner-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .router-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .mode-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #9ca3af;
+            transition: all 0.3s ease;
+        }
+        .mode-indicator.orch {
+            background: var(--accent-orch-bg);
+            border-color: var(--accent-orch-border);
+            color: var(--accent-orch);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
+        }
+        .mode-indicator.autonav {
+            background: var(--accent-autonav-bg);
+            border-color: var(--accent-autonav-border);
+            color: var(--accent-autonav);
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.25);
+        }
+        .mode-indicator.classifying {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.3);
+        }
 
-            .mic-capsule {
-                position: relative;
-                width: 164px;
-                height: 275px;
-                border-radius: 90px;
-                background: linear-gradient(
-                    180deg,
-                    rgba(120, 135, 145, 0.52),
-                    rgba(85, 90, 88, 0.42),
-                    rgba(80, 70, 55, 0.35)
-                );
-                border: 2px solid rgba(210, 220, 225, 0.22);
-                box-shadow:
-                    0 0 45px rgba(120, 165, 200, 0.38),
-                    inset 0 0 30px rgba(255, 255, 255, 0.08);
-                animation: micFloat 1.25s ease-in-out infinite;
-                animation-play-state: paused;
-                z-index: 4;
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
-            }
-            .mic-capsule:hover {
-                transform: scale(1.02) translateY(var(--hover-translate, -12px));
-                box-shadow:
-                    0 0 55px rgba(120, 165, 200, 0.48),
-                    inset 0 0 40px rgba(255, 255, 255, 0.12);
-            }
+        /* Search Input Box */
+        .search-input-wrapper {
+            display: flex;
+            align-items: center;
+            background: rgba(10, 12, 16, 0.85);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 6px 8px 6px 16px;
+            gap: 12px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+            transition: all 0.25s ease;
+        }
+        .search-input-wrapper:focus-within {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        .search-icon {
+            font-size: 1.2rem;
+            color: #6366f1;
+            user-select: none;
+        }
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-size: 1rem;
+            font-family: inherit;
+            padding: 8px 0;
+        }
+        .search-input::placeholder {
+            color: #4b5563;
+        }
+        .search-btn {
+            background: var(--accent-primary-gradient);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+            white-space: nowrap;
+        }
+        .search-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
+        }
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
 
-            .side-line {
-                position: absolute;
-                top: 68px;
-                width: 3px;
-                height: 136px;
-                background: linear-gradient(
-                    180deg,
-                    rgba(235, 245, 255, 0.65),
-                    rgba(235, 245, 255, 0.25)
-                );
-            }
+        .classify-only-btn {
+            background: rgba(255, 255, 255, 0.06);
+            color: #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .classify-only-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+        }
 
-            .side-line.left {
-                left: -2px;
-            }
+        /* Quick Pills */
+        .quick-pills-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .pills-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .pill {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #d1d5db;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .pill:hover {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
 
-            .side-line.right {
-                right: -2px;
-            }
+        /* ── Assistant Chat / Response Box ── */
+        .chat-box {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 20px;
+            min-height: 80px;
+            max-height: 180px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .chat-msg {
+            font-size: 0.92rem;
+            line-height: 1.45;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .chat-msg.user {
+            color: #93c5fd;
+            font-weight: 500;
+        }
+        .chat-msg.assistant {
+            color: #fde68a;
+        }
+        .chat-msg.routing {
+            display: inline-block;
+            align-self: flex-start;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 12px;
+            letter-spacing: 0.5px;
+        }
+        .chat-msg.routing.orch {
+            background: var(--accent-orch-bg);
+            border: 1px solid var(--accent-orch-border);
+            color: var(--accent-orch);
+        }
+        .chat-msg.routing.autonav {
+            background: var(--accent-autonav-bg);
+            border: 1px solid var(--accent-autonav-border);
+            color: var(--accent-autonav);
+        }
 
-            .inner-capsule {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                width: 68px;
-                height: 144px;
-                transform: translate(-50%, -50%);
-                border-radius: 42px;
-                background: linear-gradient(180deg, #78b9ee 0%, #8da2bd 52%, #bd7b41 100%);
-                box-shadow:
-                    0 0 55px rgba(112, 178, 238, 0.48),
-                    0 0 90px rgba(186, 118, 65, 0.22);
-                animation: innerPulse 1.25s ease-in-out infinite;
-                animation-play-state: paused;
+        /* ── Dual Column Control & Log Layout ── */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 768px) {
+            .grid-2col {
+                grid-template-columns: 1fr;
             }
+        }
 
-            .light-dot {
-                position: absolute;
-                left: 50%;
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                transform: translateX(-50%);
-                background: rgba(255, 255, 255, 0.09);
-            }
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-            .light-dot.top {
-                top: 28px;
-            }
+        /* Terminal Log Area */
+        .terminal-box {
+            width: 100%;
+            height: 180px;
+            background: #08090d;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            line-height: 1.45;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
 
-            .light-dot.bottom {
-                bottom: 28px;
-            }
+        /* Active Tabs */
+        .tabs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .tab-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        .tab-item.active {
+            background: rgba(99, 102, 241, 0.12);
+            border-color: #6366f1;
+        }
+        .tab-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #ffffff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .tab-url {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
 
-            .bars {
-                position: absolute;
-                top: 145px;
-                display: flex;
-                gap: 16px;
-                align-items: center;
-                z-index: 3;
-            }
+        /* Modals */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-card {
+            background: #11141c;
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            border-radius: 16px;
+            padding: 28px;
+            width: 360px;
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.2);
+            color: #ffffff;
+            animation: fadeIn 0.25s ease-out;
+        }
 
-            .bars-left {
-                left: 130px;
-            }
-
-            .bars-right {
-                right: 130px;
-            }
-
-            .bars span {
-                width: 10px;
-                border-radius: 20px;
-                background: linear-gradient(180deg, #6fa7d8, #a2683f);
-                box-shadow: 0 0 18px rgba(107, 162, 215, 0.35);
-                animation: barListen 1.05s ease-in-out infinite;
-                animation-play-state: paused;
-            }
-
-            .bars span:nth-child(1) {
-                height: 48px;
-                animation-delay: 0s;
-            }
-
-            .bars span:nth-child(2) {
-                height: 120px;
-                animation-delay: 0.15s;
-            }
-
-            .bars span:nth-child(3) {
-                height: 112px;
-                animation-delay: 0.3s;
-            }
-
-            .bars-right span:nth-child(1) {
-                height: 120px;
-                animation-delay: 0.28s;
-            }
-
-            .bars-right span:nth-child(2) {
-                height: 106px;
-                animation-delay: 0.12s;
-            }
-
-            .bars-right span:nth-child(3) {
-                height: 96px;
-                animation-delay: 0.22s;
-            }
-
-            .bottom-arc {
-                position: absolute;
-                bottom: -20px;
-                width: 115px;
-                height: 105px;
-                border: 1px solid rgba(180, 205, 220, 0.14);
-                border-top: none;
-                border-radius: 0 0 70px 70px;
-            }
-
-            .status {
-                margin-top: 20px;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                color: #8f8f8f;
-                font-size: 14px;
-            }
-
-            .status-dot {
-                width: 11px;
-                height: 11px;
-                border-radius: 50%;
-                background: #555;
-                box-shadow: none;
-                animation: dotPulse 1.2s ease-in-out infinite;
-                animation-play-state: paused;
-            }
-
-            .pause-btn {
-                margin-top: 24px;
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                border-radius: 10px;
-                padding: 8px 16px;
-                background: rgba(255, 255, 255, 0.08);
-                color: #e5e5e5;
-                font-size: 14px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                outline: none;
-            }
-            .pause-btn:hover {
-                background: rgba(255, 255, 255, 0.15);
-                color: white;
-            }
-
-            .strength {
-                margin-top: 16px;
-                width: 338px;
-            }
-
-            .strength-top {
-                display: flex;
-                justify-content: space-between;
-                font-size: 14px;
-                margin-bottom: 10px;
-                color: #a0a0a0;
-            }
-
-            .slider {
-                position: relative;
-                height: 4px;
-                background: rgba(255, 255, 255, 0.08);
-                border-radius: 2px;
-            }
-
-            .slider-fill {
-                width: 0%;
-                height: 100%;
-                background: linear-gradient(90deg, #78b9ee, #bd7b41);
-                border-radius: 2px;
-                transition: width 0.1s ease;
-            }
-
-            .slider-thumb {
-                position: absolute;
-                left: 0%;
-                top: 50%;
-                width: 12px;
-                height: 12px;
-                border-radius: 50%;
-                background: white;
-                transform: translate(-50%, -50%);
-                box-shadow: 0 0 8px rgba(120, 165, 200, 0.8);
-                transition: left 0.1s ease;
-            }
-
-            /* --- Chat and Control Layout styles --- */
-            .chat-container, .controls-container {
-                width: 100%;
-                max-width: 600px;
-                z-index: 2;
-                box-sizing: border-box;
-            }
-
-            .chat-box {
-                background: rgba(25, 25, 25, 0.6);
-                backdrop-filter: blur(12px);
-                border: 1px solid rgba(120, 165, 200, 0.2);
-                border-radius: 16px;
-                padding: 20px;
-                min-height: 120px;
-                max-height: 200px;
-                overflow-y: auto;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-                transition: all 0.3s ease;
-            }
-            .chat-box.active {
-                border-color: rgba(120, 165, 200, 0.5);
-                box-shadow: 0 0 25px rgba(120, 165, 200, 0.15);
-            }
-            .message {
-                font-size: 0.95rem;
-                line-height: 1.4;
-                opacity: 0;
-                transform: translateY(10px);
-                animation: fadeIn 0.4s forwards ease-out;
-            }
-            .user-msg {
-                color: #78b9ee;
-            }
-            .llm-msg {
-                color: #e5c4a5;
-            }
-            .system-message {
-                color: #71717a;
-                text-align: center;
-                font-size: 0.9rem;
-                font-style: italic;
-                margin-top: 30px;
-            }
-            @keyframes fadeIn {
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-
-            .controls-container {
-                display: flex;
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .control-card, .log-card {
-                background: rgba(25, 25, 25, 0.5);
-                backdrop-filter: blur(12px);
-                border: 1px solid rgba(255, 255, 255, 0.05);
-                border-radius: 12px;
-                padding: 16px;
-                box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-            }
-            .control-card h3, .log-card h3 {
-                margin: 0 0 10px 0;
-                font-size: 0.85rem;
-                letter-spacing: 1px;
-                color: #94A3B8;
-                font-weight: 600;
-            }
-            .control-card h3 {
-                color: #bd7b41;
-            }
-            .control-card:nth-child(3) h3 {
-                color: #78b9ee;
-            }
-            .log-card h3 {
-                color: #94A3B8;
-            }
-            .input-row {
-                display: flex;
-                gap: 8px;
-            }
-            .input-row input {
-                flex: 1;
-                background: rgba(15, 15, 15, 0.8);
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                border-radius: 6px;
-                padding: 8px 12px;
-                color: #fff;
-                font-family: monospace;
-                font-size: 0.8rem;
-                outline: none;
-                transition: border-color 0.2s;
-            }
-            .input-row input:focus {
-                border-color: rgba(120, 165, 200, 0.4);
-            }
-            .input-row button {
-                padding: 8px 16px;
-                border: none;
-                border-radius: 6px;
-                font-size: 0.8rem;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s;
-                white-space: nowrap;
-            }
-            #orchSubmitBtn {
-                background: linear-gradient(135deg, #bd7b41, #8c5b30);
-                color: #fff;
-            }
-            #orchSubmitBtn:hover {
-                box-shadow: 0 0 15px rgba(189, 123, 65, 0.4);
-            }
-            #autoNavWakeupBtn {
-                background: linear-gradient(135deg, #78b9ee, #5a8cb4);
-                color: #fff;
-            }
-            #autoNavWakeupBtn:hover {
-                box-shadow: 0 0 15px rgba(120, 165, 200, 0.4);
-            }
-
-            /* ── Voice→Orchestration Toggle ─────────────────────── */
-            .voice-orch-toggle-card {
-                background: rgba(189, 123, 65, 0.06);
-                backdrop-filter: blur(12px);
-                border: 1px solid rgba(189, 123, 65, 0.25);
-                border-radius: 14px;
-                padding: 14px 18px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-                box-shadow: 0 0 20px rgba(189, 123, 65, 0.08);
-                transition: all 0.3s ease;
-            }
-            .voice-orch-toggle-card.active {
-                border-color: rgba(189, 123, 65, 0.6);
-                box-shadow: 0 0 30px rgba(189, 123, 65, 0.25), inset 0 0 20px rgba(189, 123, 65, 0.05);
-            }
-            .toggle-label-group {
-                display: flex;
-                flex-direction: column;
-                gap: 3px;
-            }
-            .toggle-title {
-                font-size: 0.82rem;
-                font-weight: 700;
-                letter-spacing: 0.8px;
-                color: #bd7b41;
-            }
-            .toggle-subtitle {
-                font-size: 0.68rem;
-                color: #71717a;
-                line-height: 1.3;
-            }
-            .toggle-switch {
-                position: relative;
-                width: 56px;
-                height: 28px;
-                flex-shrink: 0;
-            }
-            .toggle-switch input {
-                opacity: 0;
-                width: 0;
-                height: 0;
-            }
-            .toggle-slider {
-                position: absolute;
-                inset: 0;
-                background: rgba(255,255,255,0.08);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 28px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-            .toggle-slider::before {
-                content: '';
-                position: absolute;
-                width: 20px;
-                height: 20px;
-                left: 4px;
-                top: 3px;
-                background: #475569;
-                border-radius: 50%;
-                transition: all 0.3s ease;
-            }
-            .toggle-switch input:checked + .toggle-slider {
-                background: rgba(189, 123, 65, 0.3);
-                border-color: #bd7b41;
-                box-shadow: 0 0 14px rgba(189, 123, 65, 0.5);
-            }
-            .toggle-switch input:checked + .toggle-slider::before {
-                transform: translateX(28px);
-                background: #bd7b41;
-                box-shadow: 0 0 8px rgba(189, 123, 65, 0.8);
-            }
-            .toggle-status-badge {
-                font-size: 0.62rem;
-                font-weight: 700;
-                letter-spacing: 1px;
-                padding: 2px 7px;
-                border-radius: 6px;
-                margin-left: 8px;
-                background: rgba(255,255,255,0.05);
-                color: #475569;
-                transition: all 0.3s;
-                vertical-align: middle;
-            }
-            .toggle-status-badge.on {
-                background: rgba(189, 123, 65, 0.2);
-                color: #bd7b41;
-            }
-            @keyframes orchPulseRing {
-                0%   { box-shadow: 0 0 0 0 rgba(189,123,65,0.6); }
-                70%  { box-shadow: 0 0 0 8px rgba(189,123,65,0); }
-                100% { box-shadow: 0 0 0 0 rgba(189,123,65,0); }
-            }
-            .orch-input-pulse {
-                animation: orchPulseRing 0.6s ease-out;
-            }
-            #automationLogs {
-                width: 100%;
-                height: 120px;
-                background: rgba(15, 15, 15, 0.7);
-                border: 1px solid rgba(255, 255, 255, 0.05);
-                border-radius: 6px;
-                padding: 8px;
-                color: #78b9ee;
-                font-family: monospace;
-                font-size: 0.75rem;
-                resize: none;
-                box-sizing: border-box;
-                outline: none;
-            }
-            .tab-btn {
-                background: rgba(20, 20, 20, 0.7);
-                border: 1px solid rgba(255, 255, 255, 0.05);
-                border-radius: 6px;
-                padding: 8px 12px;
-                color: #ccc;
-                font-size: 0.75rem;
-                text-align: left;
-                cursor: pointer;
-                transition: all 0.2s;
-                width: 100%;
-                box-sizing: border-box;
-                margin-bottom: 4px;
-            }
-            .tab-btn.active {
-                border-color: #78b9ee;
-                background: rgba(120, 165, 200, 0.08);
-                color: #fff;
-                box-shadow: 0 0 10px rgba(120, 165, 200, 0.2);
-            }
-            .tab-btn:hover {
-                background: rgba(255, 255, 255, 0.05);
-            }
-            .tab-title {
-                font-weight: 600;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                display: block;
-            }
-            .tab-url {
-                font-size: 0.65rem;
-                color: #666;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                display: block;
-                margin-top: 2px;
-            }
-
-            @keyframes micFloat {
-                0%, 100% {
-                    transform: translateY(-12px);
-                }
-
-                50% {
-                    transform: translateY(12px);
-                }
-            }
-
-            @keyframes innerPulse {
-                0%, 100% {
-                    height: 144px;
-                    opacity: 1;
-                }
-
-                50% {
-                    height: 118px;
-                    opacity: 0.86;
-                }
-            }
-
-            @keyframes barListen {
-                0%, 100% {
-                    transform: scaleY(1);
-                    opacity: 1;
-                }
-
-                50% {
-                    transform: scaleY(0.48);
-                    opacity: 0.6;
-                }
-            }
-
-            @keyframes ringPulse {
-                0%, 100% {
-                    transform: scale(0.98);
-                    opacity: 0.75;
-                }
-
-                50% {
-                    transform: scale(1.04);
-                    opacity: 0.35;
-                }
-            }
-
-            @keyframes dotPulse {
-                0%, 100% {
-                    opacity: 1;
-                }
-
-                50% {
-                    opacity: 0.45;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="voice-ui">
-          <div class="voice-card">
-            <div class="outer-ring"></div>
-            <div class="inner-ring"></div>
-
-            <div class="bars bars-left">
-              <span></span>
-              <span></span>
-              <span></span>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">
+                ⚡ SMART QUERY ROUTER &amp; AUTOMATION HUB
+                <span class="port-badge">PORT 6003</span>
             </div>
-
-            <div class="mic-capsule" id="micBtn" style="cursor: pointer;">
-              <div class="side-line left"></div>
-              <div class="side-line right"></div>
-              <div class="inner-capsule">
-                <span class="light-dot top"></span>
-                <span class="light-dot bottom"></span>
-              </div>
-            </div>
-
-            <div class="bars bars-right">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-
-            <div class="bottom-arc"></div>
-          </div>
-
-          <div class="status">
-            <span class="status-dot" id="statusDot"></span>
-            <span id="statusText">Tap capsule to speak</span>
-          </div>
-
-          <button class="pause-btn">Pause motion</button>
-
-          <div class="strength">
-            <div class="strength-top">
-              <span>Movement strength</span>
-              <span>0%</span>
-            </div>
-            <div class="slider">
-              <div class="slider-fill" style="width: 0%;"></div>
-              <div class="slider-thumb" style="left: 0%;"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="chat-container">
-            <div class="chat-box" id="chatBox">
-                <div class="system-message">Tap the mic capsule and speak to start.</div>
+            <div class="header-subtitle">
+                Autonomous Intent Classification &bull; Orchestration Mode &bull; Auto-Navigation Mode
             </div>
         </div>
 
-        <!-- OTP Modal -->
-        <div id="otpModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center;">
-            <div style="background:rgba(20,20,20,0.95); border:1px solid rgba(120, 165, 200, 0.4); border-radius:16px; padding:32px; width:340px; box-shadow:0 0 40px rgba(120, 165, 200, 0.25); font-family:'Segoe UI',sans-serif; color: white;">
-                <div style="font-size:1.5rem; margin-bottom:8px;">🔑 OTP / 2FA Verification Required</div>
-                <div id="otpModalDesc" style="color:#94A3B8; font-size:0.85rem; margin-bottom:18px;">Please enter the OTP sent to your device.</div>
-                <input id="otpModalInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="Enter OTP code..." style="width:100%; box-sizing:border-box; padding:10px 14px; background:rgba(30,30,30,0.8); border:1px solid rgba(120,165,200,0.3); border-radius:8px; color:#fff; font-size:1rem; outline:none; margin-bottom:16px;">
-                <div style="display:flex; gap:10px;">
-                    <button id="otpModalCancel" style="flex:1; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#94A3B8; cursor:pointer; font-size:0.85rem;">Cancel</button>
-                    <button id="otpModalSubmit" style="flex:2; padding:10px; background:linear-gradient(135deg,#78b9ee,#bd7b41); border:none; border-radius:8px; color:#fff; font-size:0.85rem; font-weight:700; cursor:pointer; box-shadow:0 0 15px rgba(120, 165, 200, 0.3);">✓ Submit OTP</button>
+        <!-- Central Search Bar & Smart Router Hero -->
+        <div class="search-hero-card">
+            <div class="mode-banner-row">
+                <span class="router-label">🧠 Intent Router</span>
+                <div class="mode-indicator" id="modeBadge">
+                    <span id="modeDot" style="width: 8px; height: 8px; border-radius: 50%; background: #6b7280; display: inline-block;"></span>
+                    <span id="modeText">STANDBY</span>
                 </div>
+            </div>
+
+            <!-- Search Input Box -->
+            <div class="search-input-wrapper">
+                <span class="search-icon">🔍</span>
+                <input 
+                    type="text" 
+                    id="smartQueryInput" 
+                    class="search-input" 
+                    placeholder="Type command e.g. 'Launch http://localhost:5173/' or 'Click on buy now for Converse'..."
+                    autofocus
+                >
+                <button id="classifyOnlyBtn" class="classify-only-btn" title="Classify intent without running">
+                    🧠 Classify
+                </button>
+                <button id="executeBtn" class="search-btn">
+                    🚀 Execute
+                </button>
+            </div>
+
+            <!-- Quick Action Pills -->
+            <div class="quick-pills-row">
+                <span class="pills-label">Quick Prompts:</span>
+                <span class="pill" onclick="setQuery('Launch http://localhost:5173/')">🌐 Launch Local Catalog</span>
+                <span class="pill" onclick="setQuery('Click on buy now for Converse Street Sneaker')">👟 Buy Converse</span>
+                <span class="pill" onclick="setQuery('Click on buy now for Nike Air Jordan 1 Low')">👟 Buy Nike Jordan</span>
+                <span class="pill" onclick="setQuery('Open Amazon')">🛍️ Open Amazon</span>
+                <span class="pill" onclick="setQuery('Book this product')">📦 Book Product</span>
             </div>
         </div>
 
-        <!-- Option Select Modal -->
-        <div id="optionModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center;">
-            <div style="background:rgba(20,20,20,0.95); border:1px solid rgba(120, 165, 200, 0.4); border-radius:16px; padding:32px; width:360px; box-shadow:0 0 40px rgba(120, 165, 200, 0.25); font-family:'Segoe UI',sans-serif; color: white;">
-                <div style="font-size:1.5rem; margin-bottom:8px;">📝 Select Option</div>
-                <div id="optionModalDesc" style="color:#94A3B8; font-size:0.85rem; margin-bottom:18px;">The automation requires you to select one of the choices below:</div>
-                <div id="optionModalList" style="display:flex; flex-direction:column; gap:8px; margin-bottom:18px;"></div>
-                <button id="optionModalCancel" style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#94A3B8; cursor:pointer; font-size:0.85rem;">Cancel</button>
+        <!-- Assistant Chat & Confirmation -->
+        <div class="chat-box" id="chatBox">
+            <div style="color: #6b7280; font-size: 0.85rem; font-style: italic; text-align: center;">
+                Type any query above and press <strong>Execute</strong> (or hit <strong>Enter</strong>) to classify and automate.
             </div>
         </div>
 
-        <!-- Success Modal -->
-        <div id="successModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center;">
-            <div style="background:rgba(20,20,20,0.95); border:1px solid rgba(120, 165, 200, 0.4); border-radius:16px; padding:32px; width:340px; text-align:center; box-shadow:0 0 40px rgba(120, 165, 200, 0.25); color: white;">
-                <div style="font-size:3rem; margin-bottom:12px;">✅</div>
-                <div id="successModalMsg" style="color:#78b9ee; font-size:1rem; font-weight:600; margin-bottom:20px;">Task Completed!</div>
-                <button id="successModalClose" style="padding:10px 28px; background:linear-gradient(135deg,#78b9ee,#bd7b41); border:none; border-radius:8px; color:#fff; font-size:0.9rem; cursor:pointer;">Close</button>
+        <!-- Lower Grid: Tabs & Automation Terminal Logs -->
+        <div class="grid-2col">
+            <!-- Active Tabs Card -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">🌐 Active Browser Tabs</span>
+                    <button id="refreshTabsBtn" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #a5b4fc; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; cursor: pointer;">
+                        🔄 Refresh
+                    </button>
+                </div>
+                <div class="tabs-list" id="tabsListContainer">
+                    <div style="color: #6b7280; font-size: 0.78rem; text-align: center; padding: 12px;">Loading tabs...</div>
+                </div>
+            </div>
+
+            <!-- Automation Logs Card -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📋 Execution Terminal Logs</span>
+                    <button onclick="document.getElementById('automationLogs').value = ''" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #9ca3af; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; cursor: pointer;">
+                        Clear
+                    </button>
+                </div>
+                <textarea id="automationLogs" class="terminal-box" readonly placeholder="Real-time execution logs will stream here..."></textarea>
             </div>
         </div>
+    </div>
 
-        <div class="controls-container">
-
-            <!-- ── Voice Smart Router Toggle ── -->
-            <div class="voice-orch-toggle-card" id="voiceOrchCard">
-                <div class="toggle-label-group">
-                    <span class="toggle-title">🧠 VOICE SMART ROUTER</span>
-                    <span class="toggle-subtitle">ON → classifies speech &amp; routes to Orchestration or Auto-Nav automatically</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <span class="toggle-status-badge" id="voiceOrchBadge">OFF</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="voiceOrchToggle">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
+    <!-- OTP Modal (HITL) -->
+    <div id="otpModal" class="modal-overlay">
+        <div class="modal-card">
+            <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">🔑 OTP / 2FA Verification</div>
+            <div id="otpModalDesc" style="color: #9ca3af; font-size: 0.82rem; margin-bottom: 16px;">Please enter the verification code to proceed.</div>
+            <input id="otpModalInput" type="text" placeholder="Enter OTP code..." style="width: 100%; padding: 10px 12px; background: rgba(0,0,0,0.5); border: 1px solid rgba(99,102,241,0.4); border-radius: 8px; color: #fff; font-size: 1rem; outline: none; margin-bottom: 16px;">
+            <div style="display: flex; gap: 10px;">
+                <button id="otpModalCancel" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #9ca3af; cursor: pointer;">Cancel</button>
+                <button id="otpModalSubmit" style="flex: 2; padding: 10px; background: var(--accent-primary-gradient); border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer;">Submit OTP</button>
             </div>
-
-            <div class="control-card">
-                <h3>🔮 ORCHESTRATION MODE</h3>
-                <div class="input-row">
-                    <input type="text" id="orchQueryInput" placeholder="Enter high-level orchestration goal...">
-                    <button id="orchSubmitBtn">🚀 Orchestrate</button>
-                </div>
-            </div>
-            
-            <div class="control-card">
-                <h3>🧭 AUTO NAVIGATION MODE</h3>
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <span id="autoNavStatusDot" style="width:8px; height:8px; border-radius:50%; background:#444; display:inline-block;"></span>
-                    <span id="autoNavStatusText" style="font-size:0.7rem; color:#666;">Idle</span>
-                </div>
-                <div class="input-row">
-                    <input type="text" id="autoNavQueryInput" placeholder="Enter auto-navigation query...">
-                    <button id="autoNavWakeupBtn">🚀 Wakeup LLM</button>
-                </div>
-            </div>
-
-            <div class="control-card">
-                <h3>🌐 ACTIVE BROWSER TABS</h3>
-                <div id="tabsListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;">
-                    <div style="color: #666; font-size: 0.75rem; text-align: center; padding: 10px;">Loading tabs...</div>
-                </div>
-                <button id="refreshTabsBtn" style="margin-top: 10px; width: 100%; padding: 6px; background: rgba(120, 165, 200, 0.1); border: 1px solid rgba(120, 165, 200, 0.3); color: #78b9ee; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">🔄 Refresh Tabs</button>
-            </div>
-
-            <div class="log-card">
-                <h3>📋 AUTOMATION TERMINAL LOGS</h3>
-                <textarea id="automationLogs" readonly placeholder="Automation logs will appear here..."></textarea>
-            </div>
-
-        <script>
-            const APP_ID = "${appId || 'a1cf13a1338444508e9b76b94be084b4'}";
-            const CHANNEL = "${channelName || 'demo-channel'}";
-            const TOKEN = "${dynamicToken}";
-
-            // Set Agora SDK log level to show warnings/errors only (filters out verbose debug messages)
-            AgoraRTC.setLogLevel(2);
-
-            const micBtn = document.getElementById('micBtn');
-            const chatBox = document.getElementById('chatBox');
-            
-            // Selectors
-            const orchQueryInput = document.getElementById('orchQueryInput');
-            const orchSubmitBtn = document.getElementById('orchSubmitBtn');
-            const autoNavQueryInput = document.getElementById('autoNavQueryInput');
-            const autoNavWakeupBtn = document.getElementById('autoNavWakeupBtn');
-            const automationLogs = document.getElementById('automationLogs');
-            const tabsListContainer = document.getElementById('tabsListContainer');
-            const refreshTabsBtn = document.getElementById('refreshTabsBtn');
-
-            const statusDot = document.getElementById('statusDot');
-            const statusText = document.getElementById('statusText');
-            const pauseBtn = document.querySelector('.pause-btn');
-
-            let client = null;
-            let localAudioTrack = null;
-            let recognition = null;
-            let isRecording = false;
-            let transcribedText = "";
-            let silenceTimeout = null;
-            let isConnecting = false;
-            let isSpeaking = false;
-            let speakingTimeout = null;
-            let volumeInterval = null;
-            let motionPaused = false;
-
-            function updateAnimations() {
-                const isRunning = isRecording && !motionPaused;
-                document.querySelectorAll('.voice-card .outer-ring, .voice-card .inner-ring, .voice-card .mic-capsule, .voice-card .inner-capsule, .voice-card .bars span').forEach(el => {
-                    el.style.animationPlayState = isRunning ? 'running' : 'paused';
-                });
-            }
-
-            if (pauseBtn) {
-                pauseBtn.addEventListener('click', () => {
-                    motionPaused = !motionPaused;
-                    document.querySelector('.voice-card').classList.toggle('motion-paused', motionPaused);
-                    pauseBtn.textContent = motionPaused ? 'Play motion' : 'Pause motion';
-                    updateAnimations();
-                });
-            }
-
-            // Stop animations initially
-            updateAnimations();
-
-            // Helpers to append neon styled messages
-            function addUserMessage(text) {
-                const placeholder = chatBox.querySelector('.system-message');
-                if (placeholder) placeholder.remove();
-
-                const userDiv = document.createElement('div');
-                userDiv.className = 'message user-msg';
-                userDiv.innerHTML = '<strong>User:</strong> ' + text;
-                chatBox.appendChild(userDiv);
-                chatBox.scrollTop = chatBox.scrollHeight;
-                chatBox.classList.add('active');
-            }
-
-            function addAgoraMessage(text) {
-                const agoraDiv = document.createElement('div');
-                agoraDiv.className = 'message llm-msg';
-                agoraDiv.innerHTML = '<strong>AGORA:</strong> ' + text;
-                chatBox.appendChild(agoraDiv);
-                chatBox.scrollTop = chatBox.scrollHeight;
-                chatBox.classList.remove('active');
-
-                // Trigger Text-to-Speech audio playback
-                try {
-                    if (window.currentAudio) {
-                        try { window.currentAudio.pause(); } catch(e) {}
-                    }
-                    
-                    isSpeaking = true;
-                    // Abort Speech Recognition during playback to prevent feedback loop
-                    if (recognition && isRecording) {
-                        try { recognition.abort(); console.log('[STT] Aborted recognition for TTS playback'); } catch(e) {}
-                    }
-
-                    const audio = new Audio('/api/speech-audio?text=' + encodeURIComponent(text));
-                    window.currentAudio = audio;
-                    if (speakingTimeout) clearTimeout(speakingTimeout);
-
-                    audio.addEventListener('ended', () => {
-                        // Keep isSpeaking true for 1 additional second to clear room echoes
-                        speakingTimeout = setTimeout(() => {
-                            isSpeaking = false;
-                            window.currentAudio = null;
-                            
-                            // Resume Speech Recognition once speaking has ended
-                            if (recognition && isRecording) {
-                                try {
-                                    recognition.start();
-                                    console.log('[STT] Resumed speech recognition');
-                                } catch(startErr) {}
-                            }
-                        }, 1000);
-                    });
-
-                    audio.addEventListener('error', () => {
-                        isSpeaking = false;
-                        window.currentAudio = null;
-                        if (recognition && isRecording) {
-                            try { recognition.start(); } catch(startErr) {}
-                        }
-                    });
-
-                    audio.play().catch(playErr => {
-                        console.warn('[TTS Playback] Audio play blocked or failed:', playErr.message);
-                        isSpeaking = false;
-                        window.currentAudio = null;
-                        if (recognition && isRecording) {
-                            try { recognition.start(); } catch(startErr) {}
-                        }
-                    });
-                } catch (audioErr) {
-                    console.error('[TTS Playback] Audio initialization failed:', audioErr.message);
-                    isSpeaking = false;
-                    window.currentAudio = null;
-                    if (recognition && isRecording) {
-                        try { recognition.start(); } catch(startErr) {}
-                    }
-                }
-            }
-
-            function logAutomation(text, type = 'info') {
-                const time = new Date().toLocaleTimeString();
-                automationLogs.value += '[' + time + '] [' + type.toUpperCase() + '] ' + text + '\\n';
-                automationLogs.scrollTop = automationLogs.scrollHeight;
-            }
-
-            // ── Voice Smart Router Toggle ─────────────────────────────────────
-            const voiceOrchToggle = document.getElementById('voiceOrchToggle');
-            const voiceOrchBadge  = document.getElementById('voiceOrchBadge');
-            const voiceOrchCard   = document.getElementById('voiceOrchCard');
-
-            let voiceOrchEnabled = false;
-
-            voiceOrchToggle.addEventListener('change', () => {
-                voiceOrchEnabled = voiceOrchToggle.checked;
-                voiceOrchBadge.textContent = voiceOrchEnabled ? 'ON' : 'OFF';
-                voiceOrchBadge.classList.toggle('on', voiceOrchEnabled);
-                voiceOrchCard.classList.toggle('active', voiceOrchEnabled);
-                logAutomation(
-                    'Voice Smart Router: ' + (voiceOrchEnabled
-                        ? 'ENABLED — mic speech will be classified & auto-routed to Orchestration or Auto-Nav.'
-                        : 'DISABLED.'),
-                    voiceOrchEnabled ? 'success' : 'info'
-                );
-            });
-
-            // ── Client-side keyword classifier (mirrors RouterLogic.js) ──────────
-            const ORCH_KEYWORDS = [
-                'open', 'launch', 'go to', 'navigate to', 'visit', 'load',
-                'start', 'show me', 'take me to', 'search for', 'find',
-            ];
-            const AUTO_NAV_KEYWORDS = [
-                'click', 'book', 'buy', 'add to cart', 'select', 'fill',
-                'type', 'scroll', 'submit', 'checkout', 'purchase', 'tap',
-                'press', 'enter', 'choose', 'pick', 'order', 'apply', 'pay',
-                'proceed', 'continue', 'verify', 'confirm',
-            ];
-
-            function kwMatch(lower, kw) {
-                if (lower.startsWith(kw + ' ') || lower === kw) return true;
-                if (lower.includes(' ' + kw + ' '))              return true;
-                if (lower.endsWith(' ' + kw))                    return true;
-                return false;
-            }
-
-            /**
-             * Classify voice text as 'ORCHESTRATION' or 'AUTO_NAVIGATION'.
-             * AUTO_NAV keywords take priority (they are more specific actions).
-             */
-            function classifyVoiceCommand(text) {
-                const lower = text.toLowerCase().trim();
-                for (const kw of AUTO_NAV_KEYWORDS) {
-                    if (kwMatch(lower, kw)) return 'AUTO_NAVIGATION';
-                }
-                for (const kw of ORCH_KEYWORDS) {
-                    if (kwMatch(lower, kw)) return 'ORCHESTRATION';
-                }
-                return 'ORCHESTRATION'; // safe default
-            }
-
-            /** Show a brief routing chip in the chat box so user sees where it went */
-            function showRoutingChip(inbox) {
-                const isOrch = inbox === 'ORCHESTRATION';
-                const chip = document.createElement('div');
-                chip.style.cssText = [
-                    'display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.7rem;',
-                    'font-weight:700; letter-spacing:0.6px; margin-top:4px; opacity:0;',
-                    'animation:fadeIn 0.3s forwards;',
-                    isOrch
-                        ? 'background:rgba(189,123,65,0.15); border:1px solid rgba(189,123,65,0.4); color:#bd7b41;'
-                        : 'background:rgba(120,165,200,0.15); border:1px solid rgba(120,165,200,0.4); color:#78b9ee;',
-                ].join('');
-                chip.textContent = isOrch ? '🔮 → ORCHESTRATION MODE' : '🧭 → AUTO NAVIGATION MODE';
-                chatBox.appendChild(chip);
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-
-            /** Pulse animation helper for any input */
-            function pulseInput(inputEl) {
-                inputEl.classList.remove('orch-input-pulse');
-                void inputEl.offsetWidth;
-                inputEl.classList.add('orch-input-pulse');
-                inputEl.addEventListener('animationend', () => inputEl.classList.remove('orch-input-pulse'), { once: true });
-            }
-
-            /**
-             * Master voice router — called when Smart Router toggle is ON.
-             * Classifies the text and dispatches to the correct inbox.
-             */
-            async function autoRouteVoice(voiceText) {
-                const inbox = classifyVoiceCommand(voiceText);
-                logAutomation('[SmartRouter] "' + voiceText + '" → classified as: ' + inbox, 'info');
-                showRoutingChip(inbox);
-
-                if (inbox === 'ORCHESTRATION') {
-                    await autoRouteToOrchestration(voiceText);
-                } else {
-                    await autoRouteToAutoNav(voiceText);
-                }
-            }
-
-            /** Route voice text → ORCHESTRATION MODE input → submit */
-            async function autoRouteToOrchestration(voiceText) {
-                orchQueryInput.value = voiceText;
-                pulseInput(orchQueryInput);
-                logAutomation('[Voice→Orch] Executing: "' + voiceText + '"', 'info');
-
-                orchSubmitBtn.disabled = true;
-                orchSubmitBtn.innerText = '🚀 Orchestrating...';
-                try {
-                    const response = await fetch('/api/voice-orchestrate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ query: voiceText })
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        logAutomation('[Voice→Orch] Orchestration finished!', 'success');
-                        if (result.executedSteps && result.executedSteps.length > 0) {
-                            result.executedSteps.forEach(s => {
-                                logAutomation('  Step: ' + s.step.func + ' -> ' + (s.message || s.error), s.success ? 'success' : 'error');
-                            });
-                        }
-                        if (result.response) {
-                            addAgoraMessage(result.response);
-                        }
-                    } else {
-                        logAutomation('[Voice→Orch] Failed: ' + (result.error || 'unknown'), 'error');
-                        if (result.response) {
-                            addAgoraMessage(result.response);
-                        }
-                    }
-                } catch (err) {
-                    logAutomation('[Voice→Orch] Connection Error: ' + err.message, 'error');
-                } finally {
-                    orchSubmitBtn.disabled = false;
-                    orchSubmitBtn.innerText = '🚀 Orchestrate';
-                    orchQueryInput.value = '';
-                    loadActiveTabs();
-                }
-            }
-
-            /** Route voice text → AUTO NAVIGATION MODE input → trigger SSE wakeup */
-            function autoRouteToAutoNav(voiceText) {
-                // If an agent is already running, abort first
-                if (currentEventSource) {
-                    currentEventSource.close();
-                    currentEventSource = null;
-                }
-
-                autoNavQueryInput.value = voiceText;
-                pulseInput(autoNavQueryInput);
-                logAutomation('[Voice→AutoNav] Executing: "' + voiceText + '"', 'info');
-
-                // Reuse exactly the same SSE wakeup flow as the manual button
-                currentSessionId = Date.now().toString();
-                autoNavWakeupBtn.disabled = true;
-                autoNavWakeupBtn.innerText = 'Agent Active...';
-                setAutoNavStatus(true);
-
-                const url = '/api/voice-autonavigate/stream?query=' + encodeURIComponent(voiceText) + '&sessionId=' + currentSessionId;
-                const es = new EventSource(url);
-                currentEventSource = es;
-
-                es.addEventListener('log', (e) => {
-                    const d = JSON.parse(e.data);
-                    logAutomation(d.message, d.type || 'info');
-                });
-                es.addEventListener('step', (e) => {
-                    const d = JSON.parse(e.data);
-                    const detail = d.action ? JSON.stringify(d.action) : (d.error || d.reason || d.status);
-                    logAutomation('Step ' + d.step + ': ' + d.status + ' -> ' + detail, d.success !== false ? 'success' : 'error');
-                });
-                es.addEventListener('otp_prompt', async (e) => {
-                    const d = JSON.parse(e.data);
-                    logAutomation('[HITL] OTP required: "' + (d.name || '') + '"', 'info');
-                    const val = await showOtpModal('OTP required for: "' + (d.name || '') + '"', d.sessionId);
-                    await sendHitlResponse(d.sessionId, val || '');
-                });
-                es.addEventListener('human_prompt', async (e) => {
-                    const d = JSON.parse(e.data);
-                    logAutomation('[HITL] Input required: "' + (d.name || '') + '"', 'info');
-                    const val = await showOtpModal('Input required for: "' + (d.name || '') + '"', d.sessionId);
-                    await sendHitlResponse(d.sessionId, val || '');
-                });
-                es.addEventListener('option_select_prompt', async (e) => {
-                    const d = JSON.parse(e.data);
-                    logAutomation('[HITL] Option selection required.', 'info');
-                    const idx = await showOptionModal(d.options || [], d.sessionId);
-                    await sendHitlResponse(d.sessionId, idx);
-                });
-                es.addEventListener('done', (e) => {
-                    const d = JSON.parse(e.data);
-                    es.close(); currentEventSource = null;
-                    autoNavWakeupBtn.disabled = false;
-                    autoNavWakeupBtn.innerText = '🚀 Wakeup LLM';
-                    setAutoNavStatus(false);
-                    logAutomation('[Voice→AutoNav] Finished! Status: ' + d.status, 'success');
-                    if (d.status === 'completed') {
-                        const buyingKeywords = ['buy', 'book', 'purchase', 'checkout', 'order', 'add to cart', 'pay'];
-                        const isBuying = buyingKeywords.some(kw => voiceText.toLowerCase().includes(kw));
-                        showSuccessModal(d.response || 'Task completed successfully!', isBuying);
-                    }
-                    if (d.response) {
-                        addAgoraMessage(d.response);
-                    }
-                    loadActiveTabs();
-                    autoNavQueryInput.value = '';
-                });
-                es.addEventListener('error', (e) => {
-                    let msg = 'Stream error';
-                    try { const d = JSON.parse(e.data); msg = d.error || msg; } catch(_) {}
-                    logAutomation('[Voice→AutoNav] Error: ' + msg, 'error');
-                    es.close(); currentEventSource = null;
-                    autoNavWakeupBtn.disabled = false;
-                    autoNavWakeupBtn.innerText = '🚀 Wakeup LLM';
-                    setAutoNavStatus(false);
-                });
-                es.onerror = () => {
-                    if (es.readyState === EventSource.CLOSED) {
-                        autoNavWakeupBtn.disabled = false;
-                        autoNavWakeupBtn.innerText = '🚀 Wakeup LLM';
-                        setAutoNavStatus(false);
-                    }
-                };
-            }
-
-            // ── Bind automation actions ───────────────────────────────────────────
-            orchSubmitBtn.addEventListener('click', async () => {
-                const query = orchQueryInput.value.trim();
-                if (!query) return;
-                
-                logAutomation('Starting Orchestration: "' + query + '"', 'info');
-                orchSubmitBtn.disabled = true;
-                orchSubmitBtn.innerText = '🚀 Orchestrating...';
-                
-                try {
-                    const response = await fetch('/api/voice-orchestrate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ query })
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        logAutomation('Orchestration finished!', 'success');
-                        if (result.executedSteps && result.executedSteps.length > 0) {
-                            result.executedSteps.forEach(s => {
-                                logAutomation('Step executed: ' + s.step.func + ' -> ' + (s.message || s.error), s.success ? 'success' : 'error');
-                            });
-                        }
-                        if (result.response) {
-                            addAgoraMessage(result.response);
-                        }
-                    } else {
-                        logAutomation('Orchestration Failed: ' + result.error, 'error');
-                        if (result.response) {
-                            addAgoraMessage(result.response);
-                        }
-                    }
-                } catch (err) {
-                    logAutomation('Connection Error: ' + err.message, 'error');
-                } finally {
-                    orchSubmitBtn.disabled = false;
-                    orchSubmitBtn.innerText = '🚀 Orchestrate';
-                    loadActiveTabs();
-                }
-            });
-
-            // --- HITL Modal Helpers ---
-            const otpModal = document.getElementById('otpModal');
-            const otpModalInput = document.getElementById('otpModalInput');
-            const otpModalSubmit = document.getElementById('otpModalSubmit');
-            const otpModalCancel = document.getElementById('otpModalCancel');
-            const otpModalDesc = document.getElementById('otpModalDesc');
-            const optionModal = document.getElementById('optionModal');
-            const optionModalList = document.getElementById('optionModalList');
-            const optionModalCancel = document.getElementById('optionModalCancel');
-            const successModal = document.getElementById('successModal');
-            const successModalMsg = document.getElementById('successModalMsg');
-            const successModalClose = document.getElementById('successModalClose');
-            const autoNavStatusDot = document.getElementById('autoNavStatusDot');
-            const autoNavStatusText = document.getElementById('autoNavStatusText');
-
-            let currentSessionId = null;
-            let currentEventSource = null;
-
-            function setAutoNavStatus(active) {
-                autoNavStatusDot.style.background = active ? '#78b9ee' : '#444';
-                autoNavStatusDot.style.boxShadow = active ? '0 0 6px #78b9ee' : 'none';
-                autoNavStatusText.textContent = active ? 'Agent Active' : 'Idle';
-                autoNavStatusText.style.color = active ? '#78b9ee' : '#666';
-            }
-
-            function showOtpModal(desc, sessionId) {
-                otpModalDesc.textContent = desc || 'Please enter the OTP sent to your device.';
-                otpModalInput.value = '';
-                otpModal.style.display = 'flex';
-                otpModalInput.focus();
-
-                return new Promise((resolve) => {
-                    function submit() {
-                        const val = otpModalInput.value.trim();
-                        if (!val) return;
-                        otpModal.style.display = 'none';
-                        cleanup();
-                        resolve(val);
-                    }
-                    function cancel() {
-                        otpModal.style.display = 'none';
-                        cleanup();
-                        resolve(null);
-                    }
-                    function onKey(e) { if (e.key === 'Enter') submit(); }
-                    function cleanup() {
-                        otpModalSubmit.removeEventListener('click', submit);
-                        otpModalCancel.removeEventListener('click', cancel);
-                        otpModalInput.removeEventListener('keydown', onKey);
-                    }
-                    otpModalSubmit.addEventListener('click', submit);
-                    otpModalCancel.addEventListener('click', cancel);
-                    otpModalInput.addEventListener('keydown', onKey);
-                });
-            }
-
-            function showOptionModal(options, sessionId) {
-                optionModalList.innerHTML = '';
-                optionModal.style.display = 'flex';
-
-                return new Promise((resolve) => {
-                    options.forEach((opt, i) => {
-                        const btn = document.createElement('button');
-                        btn.textContent = opt.label || opt.name || opt;
-                        btn.style.cssText = 'width:100%; padding:10px 14px; background:rgba(120,165,200,0.08); border:1px solid rgba(120,165,200,0.3); border-radius:8px; color:#78b9ee; cursor:pointer; font-size:0.85rem; text-align:left; transition:all 0.2s;';
-                        btn.onmouseover = () => btn.style.background = 'rgba(120,165,200,0.2)';
-                        btn.onmouseout = () => btn.style.background = 'rgba(120,165,200,0.08)';
-                        btn.addEventListener('click', () => {
-                            optionModal.style.display = 'none';
-                            const idx = typeof opt === 'object' && opt.index !== undefined ? opt.index : (options[i] && options[i].index !== undefined ? options[i].index : i);
-                            resolve(idx);
-                        });
-                        optionModalList.appendChild(btn);
-                    });
-                    optionModalCancel.onclick = () => {
-                        optionModal.style.display = 'none';
-                        resolve(null);
-                    };
-                });
-            }
-
-            function showSuccessModal(msg, isBuying = false) {
-                try {
-                    const innerDiv = successModal.firstElementChild;
-                    if (innerDiv && innerDiv.firstElementChild) {
-                        innerDiv.firstElementChild.textContent = isBuying ? '🛒' : '✅';
-                    }
-                } catch (e) {}
-
-                if (isBuying) {
-                    successModalMsg.innerHTML = 
-                        '<div style="font-size: 1.4rem; color: #10B981; font-weight: 700; margin-bottom: 8px;">Action / Payment Completed!</div>' +
-                        '<div style="font-size: 0.95rem; color: #94A3B8;">' + (msg || 'Your request was completed successfully.') + '</div>';
-                } else {
-                    successModalMsg.innerHTML = 
-                        '<div style="font-size: 1.4rem; color: #78b9ee; font-weight: 700; margin-bottom: 8px;">Task Completed!</div>' +
-                        '<div style="font-size: 0.95rem; color: #94A3B8;">' + (msg || 'The task completed successfully.') + '</div>';
-                }
-                successModal.style.display = 'flex';
-                successModalClose.onclick = () => { successModal.style.display = 'none'; };
-            }
-
-            // Send HITL response back to server
-            async function sendHitlResponse(sessionId, value) {
-                try {
-                    await fetch('/api/voice-autonavigate/hitl-response', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sessionId, value })
-                    });
-                } catch (e) {
-                    logAutomation('HITL send error: ' + e.message, 'error');
-                }
-            }
-
-            // --- AutoNav SSE Wakeup ---
-            autoNavWakeupBtn.addEventListener('click', () => {
-                const query = autoNavQueryInput.value.trim();
-                if (!query) return;
-
-                if (currentEventSource) {
-                    currentEventSource.close();
-                    currentEventSource = null;
-                }
-
-                currentSessionId = Date.now().toString();
-                logAutomation('Starting Auto Navigation (HITL mode): "' + query + '"', 'info');
-                autoNavWakeupBtn.disabled = true;
-                autoNavWakeupBtn.innerText = 'Agent Active...';
-                setAutoNavStatus(true);
-
-                const url = '/api/voice-autonavigate/stream?query=' + encodeURIComponent(query) + '&sessionId=' + currentSessionId;
-                const es = new EventSource(url);
-                currentEventSource = es;
-
-                es.addEventListener('log', (e) => {
-                    const d = JSON.parse(e.data);
-                    logAutomation(d.message, d.type || 'info');
-                });
-
-                es.addEventListener('step', (e) => {
-                    const d = JSON.parse(e.data);
-                    const detail = d.action ? JSON.stringify(d.action) : (d.error || d.reason || d.status);
-                    logAutomation('Step ' + d.step + ': ' + d.status + ' -> ' + detail, d.success !== false ? 'success' : 'error');
-                });
-
-                es.addEventListener('otp_prompt', async (e) => {
-                    const d = JSON.parse(e.data);
-                    logAutomation('[HITL] OTP required for field: "' + (d.name || 'Enter OTP') + '"', 'info');
-                    const val = await showOtpModal('The automation requires an OTP for: "' + (d.name || 'Enter OTP') + '"', d.sessionId);
-                    if (val) {
-                        logAutomation('[HITL] OTP submitted.', 'info');
-                        await sendHitlResponse(d.sessionId, val);
-                    } else {
-                        logAutomation('[HITL] OTP cancelled by user.', 'error');
-                        await sendHitlResponse(d.sessionId, '');
-                    }
-                });
-
-                es.addEventListener('human_prompt', async (e) => {
-                    const d = JSON.parse(e.data);
-                    logAutomation('[HITL] User input required for: "' + (d.name || '') + '"', 'info');
-                    const val = await showOtpModal('Input required for: "' + (d.name || '') + '"', d.sessionId);
-                    if (val) {
-                        await sendHitlResponse(d.sessionId, val);
-                    } else {
-                        await sendHitlResponse(d.sessionId, '');
-                    }
-                });
-
-                es.addEventListener('option_select_prompt', async (e) => {
-                    const d = JSON.parse(e.data);
-                    logAutomation('[HITL] Option selection required.', 'info');
-                    const idx = await showOptionModal(d.options || [], d.sessionId);
-                    await sendHitlResponse(d.sessionId, idx);
-                });
-
-                es.addEventListener('done', (e) => {
-                    const d = JSON.parse(e.data);
-                    es.close();
-                    currentEventSource = null;
-                    autoNavWakeupBtn.disabled = false;
-                    autoNavWakeupBtn.innerText = '🚀 Wakeup LLM';
-                    setAutoNavStatus(false);
-                    logAutomation('Auto Navigation finished! Status: ' + d.status, 'success');
-                    if (d.status === 'completed') {
-                        const buyingKeywords = ['buy', 'book', 'purchase', 'checkout', 'order', 'add to cart', 'pay'];
-                        const isBuying = buyingKeywords.some(kw => query.toLowerCase().includes(kw));
-                        showSuccessModal(d.response || 'Task completed successfully!', isBuying);
-                    }
-                    if (d.response) {
-                        addAgoraMessage(d.response);
-                    }
-                    loadActiveTabs();
-                });
-
-                es.addEventListener('error', (e) => {
-                    let msg = 'Stream error';
-                    try { const d = JSON.parse(e.data); msg = d.error || msg; } catch(_) {}
-                    logAutomation('Auto Navigation Error: ' + msg, 'error');
-                    es.close();
-                    currentEventSource = null;
-                    autoNavWakeupBtn.disabled = false;
-                    autoNavWakeupBtn.innerText = '🚀 Wakeup LLM';
-                    setAutoNavStatus(false);
-                });
-
-                es.onerror = () => {
-                    if (es.readyState === EventSource.CLOSED) {
-                        autoNavWakeupBtn.disabled = false;
-                        autoNavWakeupBtn.innerText = '🚀 Wakeup LLM';
-                        setAutoNavStatus(false);
-                    }
-                };
-            });
-
-            async function loadActiveTabs() {
-                try {
-                    const response = await fetch('/api/list-tabs', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                    const result = await response.json();
-                    if (result.success && result.tabs && result.tabs.length > 0) {
-                        tabsListContainer.innerHTML = '';
-                        result.tabs.forEach(tab => {
-                            const btn = document.createElement('button');
-                            btn.className = 'tab-btn' + (tab.isActive ? ' active' : '');
-                            
-                            const titleSpan = document.createElement('span');
-                            titleSpan.className = 'tab-title';
-                            titleSpan.innerText = tab.title || '(No Title)';
-                            
-                            const urlSpan = document.createElement('span');
-                            urlSpan.className = 'tab-url';
-                            urlSpan.innerText = tab.url;
-                            
-                            btn.appendChild(titleSpan);
-                            btn.appendChild(urlSpan);
-                            
-                            btn.addEventListener('click', async () => {
-                                btn.disabled = true;
-                                titleSpan.innerText = 'Switching...';
-                                try {
-                                    const switchRes = await fetch('/api/switch-tab', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ index: tab.index })
-                                    });
-                                    const switchResult = await switchRes.json();
-                                    if (switchResult.success) {
-                                        logAutomation('Switched to tab: ' + (tab.title || tab.url), 'success');
-                                    }
-                                } catch (e) {
-                                    logAutomation('Failed to switch tab: ' + e.message, 'error');
-                                } finally {
-                                    loadActiveTabs();
-                                }
-                            });
-                            
-                            tabsListContainer.appendChild(btn);
-                        });
-                    } else {
-                        tabsListContainer.innerHTML = '<div style="color: #666; font-size: 0.75rem; text-align: center; padding: 10px;">No active tabs.</div>';
-                    }
-                } catch (err) {
-                    tabsListContainer.innerHTML = '<div style="color: #ef4444; font-size: 0.75rem; text-align: center; padding: 10px;">Failed to load tabs: ' + err.message + '</div>';
-                }
-            }
-
-            refreshTabsBtn.addEventListener('click', loadActiveTabs);
-            // Load tabs initially
-            loadActiveTabs();
-
-            // Initialize Speech Recognition
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                recognition = new SpeechRecognition();
-                recognition.continuous = true;
-                recognition.interimResults = false;
-                recognition.lang = 'en-US';
-
-                recognition.onresult = (event) => {
-                    if (isSpeaking) {
-                        console.log('[STT] Speech recognition input ignored because AGORA is speaking.');
-                        transcribedText = "";
-                        clearTimeout(silenceTimeout);
-                        return;
-                    }
-
-                    let resultText = "";
-                    for (let i = 0; i < event.results.length; i++) {
-                        resultText += event.results[i][0].transcript + " ";
-                    }
-                    transcribedText = resultText.trim();
-                    console.log('[STT] Transcribed:', transcribedText);
-
-                    // Reset 3-second silence timer
-                    clearTimeout(silenceTimeout);
-                    silenceTimeout = setTimeout(async () => {
-                        if (transcribedText) {
-                            console.log('[STT] 3 seconds of silence. Processing...');
-                            addUserMessage(transcribedText);
-                            
-                            const textToSend = transcribedText;
-                            transcribedText = ""; // Clear early to avoid duplicates
-
-                            // ── If Voice Smart Router toggle is ON, classify & auto-route ──
-                            if (voiceOrchEnabled) {
-                                console.log('[STT] Smart Router ON — classifying and routing: "' + textToSend + '"');
-                                await autoRouteVoice(textToSend);
-                            } else {
-                                // Default: send to conversational LLM assistant
-                                try {
-                                    const response = await fetch('/api/speech-to-text', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ text: textToSend })
-                                    });
-                                    const result = await response.json();
-                                    if (result.success && result.response) {
-                                        addAgoraMessage(result.response);
-                                    }
-                                } catch (err) {
-                                    console.error('Failed to send text to server:', err);
-                                }
-                            }
-                        }
-                        // Stop recognition to clear the internal buffer/history
-                        if (isRecording) {
-                            recognition.stop();
-                        }
-                    }, 3000);
-                };
-
-                recognition.onend = () => {
-                    // Auto-restart recognition if user is still actively recording (e.g. after a silence stop)
-                    // But do not restart if the system is currently speaking (TTS is active)
-                    if (isRecording && !isSpeaking) {
-                        try {
-                            recognition.start();
-                            console.log('[STT] Recognition restarted for a new sentence.');
-                        } catch (err) {
-                            // Already started, ignore
-                        }
-                    }
-                };
-
-                recognition.onerror = (event) => {
-                    if (event.error === 'aborted') return;
-                    console.error('[STT] Error:', event.error);
-                };
+        </div>
+    </div>
+
+    <!-- Option Select Modal (HITL) -->
+    <div id="optionModal" class="modal-overlay">
+        <div class="modal-card">
+            <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">📝 Select Option</div>
+            <div id="optionModalDesc" style="color: #9ca3af; font-size: 0.82rem; margin-bottom: 16px;">Select one of the options below:</div>
+            <div id="optionModalList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;"></div>
+            <button id="optionModalCancel" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #9ca3af; cursor: pointer;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-card" style="text-align: center;">
+            <div style="font-size: 2.8rem; margin-bottom: 10px;">🎉</div>
+            <div id="successModalMsg" style="color: #38bdf8; font-size: 1rem; font-weight: 600; margin-bottom: 18px;">Task Completed!</div>
+            <button id="successModalClose" style="padding: 9px 24px; background: var(--accent-primary-gradient); border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer;">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const smartQueryInput = document.getElementById('smartQueryInput');
+        const executeBtn = document.getElementById('executeBtn');
+        const classifyOnlyBtn = document.getElementById('classifyOnlyBtn');
+        const modeBadge = document.getElementById('modeBadge');
+        const modeDot = document.getElementById('modeDot');
+        const modeText = document.getElementById('modeText');
+        const chatBox = document.getElementById('chatBox');
+        const automationLogs = document.getElementById('automationLogs');
+        const tabsListContainer = document.getElementById('tabsListContainer');
+        const refreshTabsBtn = document.getElementById('refreshTabsBtn');
+
+        let currentEventSource = null;
+        let currentSessionId = null;
+
+        function setQuery(text) {
+            smartQueryInput.value = text;
+            smartQueryInput.focus();
+        }
+
+        function log(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : (type === 'success' ? '✅' : 'ℹ️');
+            automationLogs.value += '[' + time + '] ' + prefix + ' ' + msg + '\\n';
+            automationLogs.scrollTop = automationLogs.scrollHeight;
+        }
+
+        function updateModeBadge(mode, status) {
+            modeBadge.className = 'mode-indicator';
+            if (status === 'classifying') {
+                modeBadge.classList.add('classifying');
+                modeDot.style.background = '#818cf8';
+                modeText.textContent = 'CLASSIFYING INTENT...';
+            } else if (mode === 'ORCHESTRATION') {
+                modeBadge.classList.add('orch');
+                modeDot.style.background = '#f59e0b';
+                modeText.textContent = '🔮 ORCHESTRATION MODE';
+            } else if (mode === 'AUTO_NAVIGATION') {
+                modeBadge.classList.add('autonav');
+                modeDot.style.background = '#06b6d4';
+                modeText.textContent = '🧭 AUTO NAVIGATION MODE';
             } else {
-                console.warn('[STT] Web Speech API is not supported in this browser.');
+                modeDot.style.background = '#6b7280';
+                modeText.textContent = 'STANDBY';
+            }
+        }
+
+        function addChatMessage(role, text, routingMode = null) {
+            const msgEl = document.createElement('div');
+            msgEl.className = 'chat-msg ' + role;
+            msgEl.textContent = (role === 'user' ? '🧑 ' : '🤖 ') + text;
+            chatBox.appendChild(msgEl);
+
+            if (routingMode) {
+                const chip = document.createElement('div');
+                chip.className = 'chat-msg routing ' + (routingMode === 'ORCHESTRATION' ? 'orch' : 'autonav');
+                chip.textContent = routingMode === 'ORCHESTRATION' ? '🔮 ROUTED TO ORCHESTRATION' : '🧭 ROUTED TO AUTO-NAVIGATION';
+                chatBox.appendChild(chip);
             }
 
-            micBtn.addEventListener('click', async () => {
-                if (isConnecting) return;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
-                if (isSpeaking) {
-                    console.log('[STT] Mic button clicked during TTS playback. Interrupting voice.');
-                    if (window.currentAudio) {
-                        try { window.currentAudio.pause(); } catch(e) {}
-                        window.currentAudio = null;
-                    }
-                    isSpeaking = false;
-                    if (speakingTimeout) clearTimeout(speakingTimeout);
-                    transcribedText = "";
-                    clearTimeout(silenceTimeout);
-                    logAutomation('AI Voice interrupted by click.', 'info');
-                    return;
-                }
-                
-                if (!isRecording) {
-                    try {
-                        isConnecting = true;
-                        micBtn.style.pointerEvents = 'none';
-                        
-                        console.log('[Agora] Connecting...');
-                        client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
-                        await client.join(APP_ID, CHANNEL, TOKEN, 1001);
-                        
-                        console.log('[Agora] Capturing and publishing audio...');
-                        localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-                        await client.publish([localAudioTrack]);
+        // ── Classify Only Handler ──
+        classifyOnlyBtn.addEventListener('click', async () => {
+            const query = smartQueryInput.value.trim();
+            if (!query) return;
 
-                        if (recognition) {
-                            transcribedText = "";
-                            recognition.start();
-                            console.log('[STT] Local SpeechRecognition started...');
-                        }
+            updateModeBadge(null, 'classifying');
+            log('Classifying query: "' + query + '"...', 'info');
 
-                        isRecording = true;
+            try {
+                const res = await fetch('/api/classify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                const data = await res.json();
+                updateModeBadge(data.inbox);
+                log('Result: ' + data.inbox + ' (Confidence: ' + data.confidence + ')', 'success');
+                addChatMessage('user', query);
+                addChatMessage('assistant', 'Intent classified as ' + data.inbox + ' (' + data.confidence + ' confidence).', data.inbox);
+            } catch (err) {
+                log('Classification error: ' + err.message, 'error');
+                updateModeBadge(null);
+            }
+        });
 
-                        // Visual styling
-                        if (statusText) statusText.textContent = 'Recognizing voice';
-                        if (statusDot) {
-                            statusDot.style.background = '#72baff';
-                            statusDot.style.boxShadow = '0 0 14px rgba(114, 186, 255, 0.7)';
-                        }
-                        updateAnimations();
+        // ── Execute Query via SSE Stream ──
+        executeBtn.addEventListener('click', () => {
+            const query = smartQueryInput.value.trim();
+            if (!query) return;
+            executeCommand(query);
+        });
 
-                        // Start volume listener interval
-                        if (volumeInterval) clearInterval(volumeInterval);
-                        volumeInterval = setInterval(() => {
-                            if (localAudioTrack) {
-                                const level = localAudioTrack.getVolumeLevel();
-                                const percentage = Math.round(level * 100);
-                                const strengthLabel = document.querySelector('.strength-top span:last-child');
-                                const sliderFill = document.querySelector('.slider-fill');
-                                const sliderThumb = document.querySelector('.slider-thumb');
-                                if (strengthLabel) strengthLabel.textContent = percentage + '%';
-                                if (sliderFill) sliderFill.style.width = percentage + '%';
-                                if (sliderThumb) sliderThumb.style.left = percentage + '%';
-                            }
-                        }, 100);
-                    } catch (err) {
-                        console.error('Failed to initialize voice session:', err);
-                        alert('Error starting session: ' + err.message);
-                    } finally {
-                        isConnecting = false;
-                        micBtn.style.pointerEvents = 'auto';
-                    }
-                } else {
-                    try {
-                        isConnecting = true;
-                        micBtn.style.pointerEvents = 'none';
-                        
-                        console.log('[Agora] Stopping capture and leaving channel...');
-                        
-                        // Clear silence timer immediately
-                        clearTimeout(silenceTimeout);
+        smartQueryInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const query = smartQueryInput.value.trim();
+                if (!query) return;
+                executeCommand(query);
+            }
+        });
 
-                        if (localAudioTrack) {
-                            localAudioTrack.stop();
-                            localAudioTrack.close();
-                        }
-                        if (client) {
-                            await client.leave();
-                        }
+        function executeCommand(query) {
+            if (currentEventSource) {
+                currentEventSource.close();
+                currentEventSource = null;
+            }
 
-                        isRecording = false;
+            executeBtn.disabled = true;
+            classifyOnlyBtn.disabled = true;
+            executeBtn.innerHTML = '⏳ Executing...';
+            updateModeBadge(null, 'classifying');
 
-                        if (recognition) {
-                            recognition.stop();
-                        }
+            addChatMessage('user', query);
+            log('Starting Smart Router execution for: "' + query + '"', 'info');
 
-                        // Reset visual styling
-                        if (statusText) statusText.textContent = 'Tap capsule to speak';
-                        if (statusDot) {
-                            statusDot.style.background = '#555';
-                            statusDot.style.boxShadow = 'none';
-                        }
-                        updateAnimations();
+            currentSessionId = Date.now().toString();
+            const sseUrl = '/api/voice-route/stream?query=' + encodeURIComponent(query) + '&sessionId=' + currentSessionId;
+            const es = new EventSource(sseUrl);
+            currentEventSource = es;
 
-                        // Clear volume listener interval
-                        if (volumeInterval) {
-                            clearInterval(volumeInterval);
-                            volumeInterval = null;
-                        }
-                        // Reset volume meter
-                        const strengthLabel = document.querySelector('.strength-top span:last-child');
-                        const sliderFill = document.querySelector('.slider-fill');
-                        const sliderThumb = document.querySelector('.slider-thumb');
-                        if (strengthLabel) strengthLabel.textContent = '0%';
-                        if (sliderFill) sliderFill.style.width = '0%';
-                        if (sliderThumb) sliderThumb.style.left = '0%';
-
-                        // Wait 500ms for final transcription event to resolve before sending
-                        setTimeout(async () => {
-                            if (transcribedText) {
-                                addUserMessage(transcribedText);
-                                const textToSend = transcribedText;
-                                transcribedText = "";
-
-                                // ── Same Smart Router check on mic-stop ──
-                                if (voiceOrchEnabled) {
-                                    console.log('[STT] Smart Router ON — classifying and routing on mic stop');
-                                    await autoRouteVoice(textToSend);
-                                } else {
-                                    try {
-                                        const response = await fetch('/api/speech-to-text', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ text: textToSend })
-                                        });
-                                        const result = await response.json();
-                                        if (result.success && result.response) {
-                                            addAgoraMessage(result.response);
-                                        }
-                                    } catch (err) {
-                                        console.error('Failed to send text to server:', err);
-                                    }
-                                }
-                            }
-                        }, 500);
-                    } catch (err) {
-                        console.error('Error stopping session:', err);
-                    } finally {
-                        isConnecting = false;
-                        micBtn.style.pointerEvents = 'auto';
-                    }
-                }
+            es.addEventListener('classified', (e) => {
+                const d = JSON.parse(e.data);
+                updateModeBadge(d.inbox);
+                log('Classified as: ' + d.inbox + ' (' + d.confidence + ')', 'info');
+                addChatMessage('assistant', 'Routing query to ' + (d.inbox === 'ORCHESTRATION' ? 'Orchestration Mode' : 'Auto-Navigation Mode') + '...', d.inbox);
             });
-        </script>
-    </body>
-    </html>
-  `);
+
+            es.addEventListener('log', (e) => {
+                const d = JSON.parse(e.data);
+                log(d.message, d.type || 'info');
+            });
+
+            es.addEventListener('step', (e) => {
+                const d = JSON.parse(e.data);
+                const detail = d.action ? JSON.stringify(d.action) : (d.error || d.reason || d.status);
+                log('Step ' + d.step + ': ' + d.status + ' -> ' + detail, d.success !== false ? 'success' : 'error');
+            });
+
+            es.addEventListener('otp_prompt', async (e) => {
+                const d = JSON.parse(e.data);
+                log('[HITL] OTP verification code requested.', 'info');
+                const val = await showOtpModal('OTP required for: "' + (d.name || '') + '"', d.sessionId);
+                await sendHitlResponse(d.sessionId, val || '');
+            });
+
+            es.addEventListener('human_prompt', async (e) => {
+                const d = JSON.parse(e.data);
+                log('[HITL] User input requested.', 'info');
+                const val = await showOtpModal('Input required for: "' + (d.name || '') + '"', d.sessionId);
+                await sendHitlResponse(d.sessionId, val || '');
+            });
+
+            es.addEventListener('option_select_prompt', async (e) => {
+                const d = JSON.parse(e.data);
+                log('[HITL] Option selection required.', 'info');
+                const idx = await showOptionModal(d.options || [], d.sessionId);
+                await sendHitlResponse(d.sessionId, idx);
+            });
+
+            es.addEventListener('done', (e) => {
+                const d = JSON.parse(e.data);
+                es.close();
+                currentEventSource = null;
+                executeBtn.disabled = false;
+                classifyOnlyBtn.disabled = false;
+                executeBtn.innerHTML = '🚀 Execute';
+                log('Execution finished! (' + (d.result?.status || d.inbox) + ')', 'success');
+
+                if (d.response) {
+                    addChatMessage('assistant', d.response);
+                }
+
+                if (d.inbox === 'AUTO_NAVIGATION' && (d.result?.status === 'completed' || d.result?.success)) {
+                    showSuccessModal(d.response || 'Purchase / action completed successfully!');
+                }
+
+                loadActiveTabs();
+                smartQueryInput.value = '';
+            });
+
+            es.addEventListener('error', (e) => {
+                let msg = 'Execution stream error';
+                try { const d = JSON.parse(e.data); msg = d.error || msg; } catch(_) {}
+                log(msg, 'error');
+                es.close();
+                currentEventSource = null;
+                executeBtn.disabled = false;
+                classifyOnlyBtn.disabled = false;
+                executeBtn.innerHTML = '🚀 Execute';
+                updateModeBadge(null);
+            });
+
+            es.onerror = () => {
+                if (es.readyState === EventSource.CLOSED) {
+                    executeBtn.disabled = false;
+                    classifyOnlyBtn.disabled = false;
+                    executeBtn.innerHTML = '🚀 Execute';
+                }
+            };
+        }
+
+        // ── Active Tabs ──
+        async function loadActiveTabs() {
+            try {
+                const res = await fetch('/api/list-tabs', { method: 'POST' });
+                const data = await res.json();
+                tabsListContainer.innerHTML = '';
+
+                if (data.success && Array.isArray(data.tabs) && data.tabs.length > 0) {
+                    data.tabs.forEach(t => {
+                        const div = document.createElement('div');
+                        div.className = 'tab-item ' + (t.isActive ? 'active' : '');
+                        div.innerHTML = '<div class="tab-title">' + (t.title || 'Untitled Tab') + '</div><div class="tab-url">' + (t.url || '') + '</div>';
+                        div.onclick = async () => {
+                            await fetch('/api/switch-tab', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ tabIndex: t.index })
+                            });
+                            loadActiveTabs();
+                        };
+                        tabsListContainer.appendChild(div);
+                    });
+                } else {
+                    tabsListContainer.innerHTML = '<div style="color:#6b7280; font-size:0.75rem; text-align:center; padding:10px;">No open tabs</div>';
+                }
+            } catch (err) {
+                tabsListContainer.innerHTML = '<div style="color:#ef4444; font-size:0.75rem; text-align:center; padding:10px;">Failed to load tabs</div>';
+            }
+        }
+        refreshTabsBtn.addEventListener('click', loadActiveTabs);
+        loadActiveTabs();
+
+        // ── HITL Modals ──
+        function showOtpModal(desc, sessionId) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('otpModal');
+                const descEl = document.getElementById('otpModalDesc');
+                const input = document.getElementById('otpModalInput');
+                const submit = document.getElementById('otpModalSubmit');
+                const cancel = document.getElementById('otpModalCancel');
+
+                descEl.textContent = desc;
+                input.value = '';
+                modal.style.display = 'flex';
+                input.focus();
+
+                function cleanup() {
+                    modal.style.display = 'none';
+                    submit.onclick = null;
+                    cancel.onclick = null;
+                }
+
+                submit.onclick = () => {
+                    const val = input.value.trim();
+                    cleanup();
+                    resolve(val);
+                };
+                cancel.onclick = () => {
+                    cleanup();
+                    resolve(null);
+                };
+            });
+        }
+
+        function showOptionModal(options, sessionId) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('optionModal');
+                const list = document.getElementById('optionModalList');
+                const cancel = document.getElementById('optionModalCancel');
+
+                list.innerHTML = '';
+                options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.style.cssText = 'padding:10px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:8px; color:#fff; cursor:pointer; text-align:left; font-size:0.85rem; font-weight:600;';
+                    btn.textContent = (idx + 1) + '. ' + (opt.label || opt.text || opt.name || opt);
+                    btn.onclick = () => {
+                        modal.style.display = 'none';
+                        resolve(opt.index !== undefined ? opt.index : idx);
+                    };
+                    list.appendChild(btn);
+                });
+
+                modal.style.display = 'flex';
+                cancel.onclick = () => {
+                    modal.style.display = 'none';
+                    resolve(null);
+                };
+            });
+        }
+
+        async function sendHitlResponse(sessionId, value) {
+            await fetch('/api/voice-autonavigate/hitl-response', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId, value })
+            });
+        }
+
+        function showSuccessModal(msg) {
+            const modal = document.getElementById('successModal');
+            document.getElementById('successModalMsg').textContent = msg;
+            modal.style.display = 'flex';
+            document.getElementById('successModalClose').onclick = () => {
+                modal.style.display = 'none';
+            };
+        }
+    </script>
+</body>
+</html>`);
 });
 
-// Endpoint: Generate Agora RTC/RTM tokens
-app.post('/api/generate-token', (req, res) => {
-  const { RtcTokenBuilder, RtcRole } = require('agora-token');
-  const { channelName = 'demo-channel', uid = 0, role = 'publisher' } = req.body;
-  
-  const appId = process.env.AGORA_APP_ID ? process.env.AGORA_APP_ID.replace(/"/g, '') : '';
-  const appCertificate = process.env.AGORA_APP_CERTIFICATE ? process.env.AGORA_APP_CERTIFICATE.replace(/"/g, '') : '';
-  
-  if (!appId || !appCertificate) {
-    return res.status(400).json({ success: false, error: 'App ID or App Certificate is missing on server' });
-  }
-
-  try {
-    const expirationTimeInSeconds = 3600 * 24; // 24 hours
-    const currentTimestamp = Math.floor(Date.now() / 1000);
-    const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
-    
-    const rtcRole = role === 'subscriber' ? RtcRole.SUBSCRIBER : RtcRole.PUBLISHER;
-    const token = RtcTokenBuilder.buildTokenWithUid(
-      appId,
-      appCertificate,
-      channelName,
-      parseInt(uid, 10) || 0,
-      rtcRole,
-      privilegeExpiredTs
-    );
-    
-    console.log(`[Voice Server] Dynamically generated token for channel: ${channelName}, uid: ${uid}`);
-    res.json({
-      success: true,
-      token,
-      channelName,
-      uid
-    });
-  } catch (err) {
-    console.error('[Voice Server] Token generation failed:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Endpoint: Synthesize speech from text (Text-to-Speech)
-app.get('/api/speech-audio', async (req, res) => {
-  const text = req.query.text;
-  if (!text) {
-    return res.status(400).send('Text parameter is required');
-  }
-
-  console.log(`[Voice Server] Synthesizing speech for: "${text}"`);
-  try {
-    const audioBuffer = await synthesizeSpeech(text);
-    res.set({
-      'Content-Type': 'audio/mpeg',
-      'Content-Length': audioBuffer.length,
-      'Cache-Control': 'public, max-age=31536000'
-    });
-    res.send(audioBuffer);
-  } catch (err) {
-    console.error('[Voice Server] TTS endpoint error:', err.message);
-    res.status(500).send(err.message);
-  }
-});
-
-// Endpoint: Speech-to-Text conversion (Logs user speech and bridges to Nvidia LLM)
-// Also passes the transcript through RouterLogic to classify & dispatch automatically.
-app.post('/api/speech-to-text', async (req, res) => {
-  const { text, autoRoute } = req.body;
-
-  console.log(`\n==================================================`);
-  console.log(`[Voice Server] User: "${text || ''}"`);
-  console.log(`==================================================\n`);
-
-  if (!text) {
-    return res.json({ success: true, text: "", response: "" });
-  }
-
-  // Get LLM conversational response
-  const llmResponse = await getLlmResponse(text);
-
-  console.log(`\n==================================================`);
-  console.log(`[Voice Server] AGORA: "${llmResponse}"`);
-  console.log(`==================================================\n`);
-
-  // If autoRoute flag is set, also classify and dispatch to correct inbox
-  let routeInfo = null;
-  if (autoRoute) {
-    try {
-      const { inbox, confidence } = await classifyQuery(text);
-      routeInfo = { inbox, confidence };
-      console.log(`[Voice Server] Router preview: "${text}" -> ${inbox} (confidence: ${confidence})`);
-    } catch (routeErr) {
-      console.error('[Voice Server] Router classify error:', routeErr.message);
-    }
-  }
-
-  res.json({ success: true, text, response: llmResponse, routeInfo });
-});
-
-// Endpoint: Voice Route — classify and dispatch a voice query to the correct inbox
-// POST /api/voice-route
-// Body: { query: string, useLLM?: boolean }
-app.post('/api/voice-route', async (req, res) => {
-  const { query, useLLM = true } = req.body;
+// Endpoint: Classify Query (no execution)
+app.post('/api/classify', async (req, res) => {
+  const { query } = req.body;
   if (!query) {
-    return res.status(400).json({ success: false, error: 'query is required' });
+    return res.status(400).json({ success: false, error: 'Query is required' });
   }
 
-  console.log(`[Voice Server] /api/voice-route received: "${query}"`);
-
   try {
-    const { inbox, result } = await routeVoiceQuery(query, { useLLM });
-    res.json({ success: true, inbox, query, result });
+    const { inbox, confidence } = await classifyQuery(query, true);
+    res.json({ success: true, query, inbox, confidence });
   } catch (err) {
-    console.error('[Voice Server] /api/voice-route error:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Endpoint: Voice Route (SSE streaming) — classify and dispatch with live step logs
-// GET /api/voice-route/stream?query=...&useLLM=true
+// Endpoint: Direct Route Query (JSON response)
+app.post('/api/route', async (req, res) => {
+  const { query } = req.body;
+  if (!query) {
+    return res.status(400).json({ success: false, error: 'Query is required' });
+  }
+
+  try {
+    const result = await routeQuery(query);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// HITL state: pending promise resolvers keyed by session ID
+const hitlPending = new Map();
+
+// Endpoint: Real-time SSE Router Stream (Classifies + Streams Execution)
 app.get('/api/voice-route/stream', async (req, res) => {
   const query = req.query.query;
-  const useLLM = req.query.useLLM !== 'false';
   const sessionId = req.query.sessionId || Date.now().toString();
+  const useLLM = req.query.useLLM !== 'false';
 
-  if (!query) return res.status(400).end();
+  if (!query) {
+    return res.status(400).end();
+  }
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -1899,22 +977,20 @@ app.get('/api/voice-route/stream', async (req, res) => {
     res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
   }
 
-  console.log(`[Voice Server] SSE voice-route started. Session: ${sessionId}, Query: "${query}"`);
+  console.log(`[Smart Router] SSE route started. Session: ${sessionId}, Query: "${query}"`);
   sendEvent('log', { message: `Classifying command: "${query}"`, type: 'info' });
 
-  // Classify first so we can immediately tell the UI which inbox
   let inbox;
   try {
     const { inbox: classified, confidence } = await classifyQuery(query, useLLM);
     inbox = classified;
     sendEvent('classified', { inbox, confidence, query });
-    console.log(`[Voice Server] SSE route classified: ${inbox} (${confidence})`);
+    console.log(`[Smart Router] SSE classified: ${inbox} (${confidence})`);
   } catch (err) {
-    inbox = INBOX.ORCHESTRATION; // safe default
+    inbox = INBOX.ORCHESTRATION;
     sendEvent('classified', { inbox, confidence: 'default', query });
   }
 
-  // Build HITL callbacks for auto-nav (mirrors /api/voice-autonavigate/stream)
   const hitlCallbacks = {
     onOtpPrompt: (action) => new Promise((resolve) => {
       sendEvent('otp_prompt', { index: action.index, name: action.name, sessionId });
@@ -1931,26 +1007,28 @@ app.get('/api/voice-route/stream', async (req, res) => {
   };
 
   try {
-    const { result } = await routeVoiceQuery(query, {
-      useLLM: false, // already classified above
+    const { result } = await routeQuery(query, {
+      useLLM: false,
       hitlCallbacks,
       onStepLog: (logEntry) => sendEvent('step', logEntry),
     });
+
     let llmResponse = "";
     try {
       if (result && (result.status === 'completed' || result.success)) {
         const confirmPrompt = `The user asked to perform: "${query}". This action was completed successfully. Write a 1-sentence natural confirmation response back to the user letting them know it's done. Keep it under 15 words.`;
         llmResponse = await getLlmResponse(confirmPrompt);
       } else {
-        const failPrompt = `The user asked to perform: "${query}". This action failed. Write a 1-sentence natural response back to the user explaining that it failed. Keep it under 15 words.`;
+        const failPrompt = `The user asked to perform: "${query}". This action stopped. Write a 1-sentence natural response back to the user explaining that it stopped. Keep it under 15 words.`;
         llmResponse = await getLlmResponse(failPrompt);
       }
     } catch (llmErr) {
-      console.error('[Voice Server] LLM confirmation error:', llmErr.message);
+      console.error('[Smart Router] LLM confirmation error:', llmErr.message);
     }
+
     sendEvent('done', { inbox, query, result, response: llmResponse });
   } catch (err) {
-    console.error('[Voice Server] SSE voice-route error:', err.message);
+    console.error('[Smart Router] SSE route error:', err.message);
     sendEvent('error', { error: err.message });
   } finally {
     hitlPending.delete(sessionId + '_hitl');
@@ -1958,36 +1036,41 @@ app.get('/api/voice-route/stream', async (req, res) => {
   }
 });
 
-// Endpoint: Voice Orchestrate (invokes runOrchestrator from orcastrator.js)
+// Endpoint: Orchestrate Direct
 app.post('/api/voice-orchestrate', async (req, res) => {
   const { query } = req.body;
   if (!query) {
     return res.status(400).json({ success: false, error: 'Query is required' });
   }
   
-  console.log(`[Voice Server] Received Voice Orchestration query: "${query}"`);
   try {
     const result = await runOrchestrator(query);
     let llmResponse = "";
     try {
       if (result.success) {
-        const confirmPrompt = `The user asked to: "${query}". This action was executed successfully. Write a 1-sentence natural confirmation response back to the user letting them know it's done. Keep it under 15 words.`;
+        const confirmPrompt = `The user asked to: "${query}". This action was executed successfully. Write a 1-sentence natural confirmation response back to the user. Keep it under 15 words.`;
         llmResponse = await getLlmResponse(confirmPrompt);
-      } else {
-        const failPrompt = `The user asked to: "${query}". This action failed due to error: "${result.error}". Write a 1-sentence natural response back to the user explaining that it failed. Keep it under 15 words.`;
-        llmResponse = await getLlmResponse(failPrompt);
       }
-    } catch (llmErr) {
-      console.error('[Voice Server] LLM confirmation error:', llmErr.message);
-    }
+    } catch (_) {}
     res.json({ ...result, response: llmResponse });
   } catch (err) {
-    console.error(`[Voice Server] Orchestration error:`, err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:2002';
+// Endpoint: Auto-Navigate Direct
+app.post('/api/voice-autonavigate', async (req, res) => {
+  const { query } = req.body;
+  if (!query) {
+    return res.status(400).json({ success: false, error: 'Query is required' });
+  }
+  try {
+    const result = await runAutoNavigationLoop(query);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // Endpoint: Proxy list-tabs to backend
 app.post('/api/list-tabs', async (req, res) => {
@@ -1999,7 +1082,6 @@ app.post('/api/list-tabs', async (req, res) => {
     const result = await response.json();
     res.json(result);
   } catch (err) {
-    console.error('[Voice Server] Proxy list-tabs failed:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -2015,84 +1097,11 @@ app.post('/api/switch-tab', async (req, res) => {
     const result = await response.json();
     res.json(result);
   } catch (err) {
-    console.error('[Voice Server] Proxy switch-tab failed:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// HITL state: pending promise resolvers keyed by session ID
-const hitlPending = new Map();
-
-// Endpoint: Voice AutoNavigate via SSE streaming (supports HITL OTP/option popups)
-app.get('/api/voice-autonavigate/stream', async (req, res) => {
-  const query = req.query.query;
-  const sessionId = req.query.sessionId || Date.now().toString();
-
-  if (!query) {
-    return res.status(400).end();
-  }
-
-  // Set up SSE headers
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.flushHeaders();
-
-  function sendEvent(event, data) {
-    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-  }
-
-  console.log(`[Voice Server] SSE AutoNav started. Session: ${sessionId}, Query: "${query}"`);
-  sendEvent('log', { message: `Starting Auto Navigation for: "${query}"`, type: 'info' });
-
-  // Build HITL callbacks that pause execution and wait for browser response
-  const hitlCallbacks = {
-    onOtpPrompt: (action) => new Promise((resolve) => {
-      console.log(`[Voice Server HITL] OTP required for index ${action.index}`);
-      sendEvent('otp_prompt', { index: action.index, name: action.name, sessionId });
-      hitlPending.set(sessionId + '_hitl', resolve);
-    }),
-    onHumanPrompt: (action) => new Promise((resolve) => {
-      console.log(`[Voice Server HITL] Human input required for: ${action.name}`);
-      sendEvent('human_prompt', { index: action.index, name: action.name, sessionId });
-      hitlPending.set(sessionId + '_hitl', resolve);
-    }),
-    onOptionSelect: (action) => new Promise((resolve) => {
-      console.log(`[Voice Server HITL] Option selection required`);
-      sendEvent('option_select_prompt', { index: action.index, options: action.options, sessionId });
-      hitlPending.set(sessionId + '_hitl', resolve);
-    }),
-  };
-
-  try {
-    const result = await runAutoNavigationLoop(query, hitlCallbacks, (logEntry) => {
-      sendEvent('step', logEntry);
-    });
-    let llmResponse = "";
-    try {
-      if (result.status === 'completed') {
-        const confirmPrompt = `The user asked to navigate and perform: "${query}". This action was completed successfully. Write a 1-sentence natural confirmation response back to the user letting them know it's done. Keep it under 15 words.`;
-        llmResponse = await getLlmResponse(confirmPrompt);
-      } else {
-        const failPrompt = `The user asked to navigate and perform: "${query}". This action stopped with status: "${result.status}". Write a 1-sentence natural response back to the user explaining that it stopped. Keep it under 15 words.`;
-        llmResponse = await getLlmResponse(failPrompt);
-      }
-    } catch (llmErr) {
-      console.error('[Voice Server] LLM confirmation error:', llmErr.message);
-    }
-    sendEvent('done', { ...result, response: llmResponse });
-    console.log(`[Voice Server] SSE AutoNav completed. Session: ${sessionId}`);
-  } catch (err) {
-    console.error(`[Voice Server] SSE AutoNav error:`, err);
-    sendEvent('error', { error: err.message });
-  } finally {
-    hitlPending.delete(sessionId + '_hitl');
-    res.end();
-  }
-});
-
-// Endpoint: Receive HITL response from browser (OTP code / option index)
+// Endpoint: Receive HITL response
 app.post('/api/voice-autonavigate/hitl-response', (req, res) => {
   const { sessionId, value } = req.body;
   if (!sessionId) return res.status(400).json({ success: false, error: 'sessionId required' });
@@ -2101,29 +1110,13 @@ app.post('/api/voice-autonavigate/hitl-response', (req, res) => {
   if (resolve) {
     hitlPending.delete(sessionId + '_hitl');
     resolve(value);
-    console.log(`[Voice Server HITL] Received response for session ${sessionId}: ${value}`);
+    console.log(`[Smart Router HITL] Received response for session ${sessionId}: ${value}`);
     res.json({ success: true });
   } else {
     res.status(404).json({ success: false, error: 'No pending HITL for this session' });
   }
 });
 
-// Keep old endpoint for backward compatibility (no HITL)
-app.post('/api/voice-autonavigate', async (req, res) => {
-  const { query } = req.body;
-  if (!query) {
-    return res.status(400).json({ success: false, error: 'Query is required' });
-  }
-  console.log(`[Voice Server] Received Voice AutoNavigation query (non-streaming): "${query}"`);
-  try {
-    const result = await runAutoNavigationLoop(query);
-    res.json(result);
-  } catch (err) {
-    console.error(`[Voice Server] AutoNavigation error:`, err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
 app.listen(PORT, () => {
-  console.log(`Voice Commanding & Smart Router Server running at http://localhost:${PORT}`);
+  console.log(`Smart Query Router Dashboard running at http://localhost:${PORT}`);
 });

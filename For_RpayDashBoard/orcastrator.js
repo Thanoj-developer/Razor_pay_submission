@@ -1,5 +1,5 @@
 // Using native global fetch
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:2002';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:6001';
 
 async function runOrchestrator(query) {
   console.log(`[Orchestrator Agent] Running backend API orchestration logic for query: "${query}" (Target: ${BACKEND_URL})`);
@@ -8,6 +8,7 @@ async function runOrchestrator(query) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        query: query,
         message: query,
         history: [],
         selectedSheets: [],
@@ -17,13 +18,14 @@ async function runOrchestrator(query) {
     });
     
     const data = await response.json();
-    if (!data.success || !data.reply) {
+    if (!data.success && !data.reply) {
       throw new Error(data.error || 'Failed to get orchestrator response');
     }
 
-    const reply = data.reply.trim();
-    let executedSteps = [];
+    const reply = (data.reply || '').trim();
+    let executedSteps = data.steps || [];
 
+    // Support legacy CALL: function syntax if returned
     if (reply.startsWith('CALL:')) {
       const jsonStr = reply.substring(5).trim();
       const steps = JSON.parse(jsonStr);
@@ -76,7 +78,12 @@ async function runOrchestrator(query) {
       }
     }
 
-    return { success: true, reply, executedSteps };
+    return { 
+      success: true, 
+      reply: reply || 'Orchestration finished', 
+      subqueries: data.subqueries || [], 
+      executedSteps 
+    };
   } catch (error) {
     console.error('[Orchestrator Agent] Error:', error.message);
     return { success: false, error: error.message };

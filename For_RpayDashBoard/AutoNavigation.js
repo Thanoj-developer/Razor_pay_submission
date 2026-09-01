@@ -1,5 +1,5 @@
 // HITL-enabled AutoNavigation — supports OTP/human_prompt/option_select_prompt callbacks
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:2002';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:6001';
 
 /**
  * Run one step of auto-navigation.
@@ -124,8 +124,11 @@ async function runAutoNavigationLoop(query, hitlCallbacks = {}, onStepLog = null
   let stepsLog = [];
   let done = false;
   let stepsCount = 0;
+  let lastActionStr = '';
 
-  while (!done && stepsCount < 20) {
+  const isSingleActionQuery = /^(click|tap|press|select|choose)\b/i.test(query.trim());
+
+  while (!done && stepsCount < 10) {
     stepsCount++;
     console.log(`[AutoNavigation Loop] Executing step ${stepsCount}`);
     
@@ -145,11 +148,29 @@ async function runAutoNavigationLoop(query, hitlCallbacks = {}, onStepLog = null
       break;
     }
 
-    // Wait 2.5 seconds to stabilize
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    const currentActionStr = JSON.stringify(result.action || {});
+    if (currentActionStr === lastActionStr) {
+      console.log(`[AutoNavigation Loop] Action already executed on previous step. Marking complete.`);
+      logEntry.status = 'completed';
+      done = true;
+      break;
+    }
+    lastActionStr = currentActionStr;
+
+    // If query is a direct single click action and it succeeded, finish
+    if (isSingleActionQuery && result.status === 'step_executed') {
+      console.log(`[AutoNavigation Loop] Single-action click executed successfully. Marking complete.`);
+      logEntry.status = 'completed';
+      done = true;
+      break;
+    }
+
+    // Wait 1.5 seconds to stabilize
+    await new Promise(resolve => setTimeout(resolve, 1500));
   }
 
-  return { success: true, status: stepsLog[stepsLog.length - 1]?.status || 'unknown', log: stepsLog };
+  const finalStatus = stepsLog[stepsLog.length - 1]?.status || 'completed';
+  return { success: true, status: finalStatus, log: stepsLog };
 }
 
 module.exports = { runAutoNavigationLoop, runAutoNavigationStep };
