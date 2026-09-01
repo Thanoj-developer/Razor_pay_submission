@@ -1,5 +1,43 @@
 [
   {
+    "filename": "cart_CartMandate_2026-09-01T13-59-26-204Z.json",
+    "type": "CartMandate",
+    "issuer": "did:example:user123456789",
+    "item": "Woodland Leather Boot",
+    "amount": 1599,
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T13:59:26.200Z",
+    "storedAt": "2026-09-01T13:59:26.215Z"
+  },
+  {
+    "filename": "intent_IntentMandate_2026-09-01T13-59-26-192Z.json",
+    "type": "IntentMandate",
+    "issuer": "did:example:user123456789",
+    "item": "Woodland Leather Boot",
+    "amount": 1599,
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T13:59:26.186Z",
+    "storedAt": "2026-09-01T13:59:26.195Z"
+  },
+  {
+    "filename": "cart_CartMandate_2026-09-01T13-49-58-945Z.json",
+    "type": "CartMandate",
+    "issuer": "did:example:user123456789",
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T13:49:58.941Z",
+    "storedAt": "2026-09-01T13:49:58.956Z"
+  },
+  {
+    "filename": "intent_IntentMandate_2026-09-01T13-49-58-919Z.json",
+    "type": "IntentMandate",
+    "issuer": "did:example:user123456789",
+    "item": "Nike Air Jordan 1 Low",
+    "amount": 1999,
+    "currency": "INR",
+    "issuanceDate": "2026-09-01T13:49:58.910Z",
+    "storedAt": "2026-09-01T13:49:58.932Z"
+  },
+  {
     "filename": "cart_CartMandate_2026-09-01T12-08-45-075Z.json",
     "type": "CartMandate",
     "issuer": "did:example:user123456789",

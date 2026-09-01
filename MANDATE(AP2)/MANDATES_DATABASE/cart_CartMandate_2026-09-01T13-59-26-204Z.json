@@ -1,0 +1,36 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "CartMandate"
+  ],
+  "issuer": "did:example:user123456789",
+  "issuanceDate": "2026-09-01T13:59:26.200Z",
+  "credentialSubject": {
+    "merchantId": "merchant_acp_razorpay_001",
+    "merchantName": "Razorpay ACP Store",
+    "cart": {
+      "items": [
+        {
+          "id": "shoe_006",
+          "name": "Woodland Leather Boot",
+          "sku": "shoe_006",
+          "unitPrice": 1599,
+          "quantity": 1
+        }
+      ],
+      "currency": "INR",
+      "totalAmount": 1599
+    },
+    "status": "USER_CONSENT_APPROVED"
+  },
+  "proof": {
+    "type": "EcdsaSecp256r1Signature2019",
+    "created": "2026-09-01T13:59:26.200Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:example:user123456789#key-1",
+    "signatureValue": "MEQCIDr4nVJVRmCoeqt+AbUH7hZTwM6VrOKExwCVuJEGdn7wAiB+9foVa6g41/RhQMlPvXWfd45JQvyKCMQB94pP0hPI5Q=="
+  }
+}

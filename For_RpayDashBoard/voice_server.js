@@ -6,6 +6,7 @@ const { getLlmResponse } = require('./LLM_FOR_VOICE');
 const { runOrchestrator } = require('./orcastrator');
 const { runAutoNavigationLoop } = require('./AutoNavigation');
 const { routeQuery, classifyQuery, INBOX } = require('./RouterLogic');
+const { getAllStoredMandates } = require('../MANDATE(AP2)/Mandate');
 
 // Load environment variables from .env files
 function loadEnv() {
@@ -389,7 +390,7 @@ app.get('/', (req, res) => {
             overflow-y: auto;
         }
 
-        /* Active Tabs */
+        /* Active Tabs & Mandates List */
         .tabs-list {
             display: flex;
             flex-direction: column;
@@ -428,6 +429,36 @@ app.get('/', (req, res) => {
             text-overflow: ellipsis;
             white-space: nowrap;
             margin-top: 2px;
+        }
+
+        /* Mandate Item in DB Card */
+        .mandate-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .mandate-badge {
+            display: inline-block;
+            align-self: flex-start;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .mandate-badge.intent {
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.4);
+        }
+        .mandate-badge.cart {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
         }
 
         /* Modals */
@@ -485,7 +516,7 @@ app.get('/', (req, res) => {
                 <span class="port-badge">PORT 6003</span>
             </div>
             <div class="header-subtitle">
-                Autonomous Intent Classification &bull; Orchestration Mode &bull; Auto-Navigation Mode
+                Autonomous Intent Classification &bull; AP2 Mandate Authorization &bull; Auto-Navigation Mode
             </div>
         </div>
 
@@ -549,6 +580,19 @@ app.get('/', (req, res) => {
                     </button>
                 </div>
                 <textarea id="automationLogs" class="terminal-box" readonly placeholder="Real-time execution logs will stream here..."></textarea>
+            </div>
+        </div>
+
+        <!-- AP2 Stored Mandates Card -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📜 AP2 Generated Mandates Database (MANDATES_DATABASE/)</span>
+                <button id="refreshMandatesBtn" style="background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #a5b4fc; padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; cursor: pointer;">
+                    🔄 Refresh Mandates
+                </button>
+            </div>
+            <div id="mandatesListContainer" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;">
+                <div style="color: #6b7280; font-size: 0.78rem; text-align: center; padding: 10px;">Loading stored mandates...</div>
             </div>
         </div>
     </div>
@@ -642,6 +686,8 @@ app.get('/', (req, res) => {
         const automationLogs = document.getElementById('automationLogs');
         const tabsListContainer = document.getElementById('tabsListContainer');
         const refreshTabsBtn = document.getElementById('refreshTabsBtn');
+        const mandatesListContainer = document.getElementById('mandatesListContainer');
+        const refreshMandatesBtn = document.getElementById('refreshMandatesBtn');
 
         let currentEventSource = null;
         let currentSessionId = null;
@@ -819,6 +865,7 @@ app.get('/', (req, res) => {
                 }
 
                 loadActiveTabs();
+                loadMandatesList();
                 smartQueryInput.value = '';
             });
 
@@ -874,6 +921,37 @@ app.get('/', (req, res) => {
         }
         refreshTabsBtn.addEventListener('click', loadActiveTabs);
         loadActiveTabs();
+
+        // ── Mandates Database List ──
+        async function loadMandatesList() {
+            try {
+                const res = await fetch('/api/mandates');
+                const list = await res.json();
+                mandatesListContainer.innerHTML = '';
+
+                if (Array.isArray(list) && list.length > 0) {
+                    list.forEach(m => {
+                        const div = document.createElement('div');
+                        div.className = 'mandate-item';
+                        const isIntent = m.type && m.type.toLowerCase().includes('intent');
+                        div.innerHTML = 
+                            '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                                '<span class="mandate-badge ' + (isIntent ? 'intent' : 'cart') + '">' + (m.type || 'Mandate') + '</span>' +
+                                '<span style="font-size:0.75rem; color:#34d399; font-weight:700;">₹' + (m.amount || '') + ' ' + (m.currency || '') + '</span>' +
+                            '</div>' +
+                            '<div style="font-size:0.8rem; font-weight:600; color:#ffffff; margin-top:2px;">' + (m.item || 'General Product') + '</div>' +
+                            '<div style="font-size:0.68rem; color:#9ca3af; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (m.filename || '') + '</div>';
+                        mandatesListContainer.appendChild(div);
+                    });
+                } else {
+                    mandatesListContainer.innerHTML = '<div style="color:#6b7280; font-size:0.78rem; text-align:center; padding:10px;">No mandates created yet.</div>';
+                }
+            } catch (err) {
+                mandatesListContainer.innerHTML = '<div style="color:#ef4444; font-size:0.78rem; text-align:center; padding:10px;">Failed to load mandates database.</div>';
+            }
+        }
+        refreshMandatesBtn.addEventListener('click', loadMandatesList);
+        loadMandatesList();
 
         // ── Trusted Consent Surface Modal Logic (Port 6003) ──
         function showCartConsentModal(product, cart, sessionId) {
@@ -995,6 +1073,16 @@ app.get('/', (req, res) => {
     </script>
 </body>
 </html>`);
+});
+
+// Endpoint: List All Generated Mandates in Database
+app.get('/api/mandates', (req, res) => {
+  try {
+    const list = getAllStoredMandates();
+    res.json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Endpoint: Classify Query (no execution)

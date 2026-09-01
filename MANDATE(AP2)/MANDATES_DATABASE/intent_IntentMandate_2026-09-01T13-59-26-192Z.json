@@ -1,0 +1,25 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "IntentMandate"
+  ],
+  "issuer": "did:example:user123456789",
+  "issuanceDate": "2026-09-01T13:59:26.186Z",
+  "credentialSubject": {
+    "authorizedItem": "Woodland Leather Boot",
+    "spendLimit": {
+      "amount": 1599,
+      "currency": "INR"
+    }
+  },
+  "proof": {
+    "type": "EcdsaSecp256r1Signature2019",
+    "created": "2026-09-01T13:59:26.186Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:example:user123456789#key-1",
+    "signatureValue": "MEYCIQCSJrfVVGdT8mLxnbDbRfWl5kBznO9Q53yk+B4eiSJArgIhAODsW3aQ8h68bnQWPCe8oBYnFFuLXsq1a8Gb14wkOiA0"
+  }
+}
