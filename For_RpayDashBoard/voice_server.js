@@ -61,6 +61,8 @@ app.get('/', (req, res) => {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Official Razorpay Standard Checkout SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         :root {
             --bg-primary: #0a0c10;
@@ -700,12 +702,17 @@ app.get('/', (req, res) => {
             </div>
 
             <!-- Action Buttons -->
-            <div style="display: flex; gap: 10px; margin-top: 4px;">
-                <button id="x402DismissBtn" style="flex: 1; padding: 11px 16px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #e5e7eb; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
-                    🔍 Keep Unsettled
-                </button>
-                <button id="x402SettleBtn" style="flex: 2; padding: 11px 16px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);">
-                    ⚡ Settle via Razorpay Test Mode
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+                <div style="display: flex; gap: 8px;">
+                    <button id="x402CheckoutUiBtn" style="flex: 1.2; padding: 11px 16px; background: linear-gradient(135deg, #6366f1, #4f46e5); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        💳 Pay with Razorpay UI
+                    </button>
+                    <button id="x402SettleBtn" style="flex: 1; padding: 11px 16px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);">
+                        ⚡ 1-Click Settle
+                    </button>
+                </div>
+                <button id="x402DismissBtn" style="width: 100%; padding: 8px 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); color: #9ca3af; border-radius: 8px; font-weight: 500; font-size: 0.8rem; cursor: pointer;">
+                    🔍 Keep Unsettled (Protocol Inspection)
                 </button>
             </div>
         </div>
@@ -1147,6 +1154,7 @@ app.get('/', (req, res) => {
             const amountEl = document.getElementById('x402Amount');
             const nonceEl = document.getElementById('x402Nonce');
             const rzpOrderEl = document.getElementById('x402RzpOrderId');
+            const checkoutUiBtn = document.getElementById('x402CheckoutUiBtn');
             const settleBtn = document.getElementById('x402SettleBtn');
             const dismissBtn = document.getElementById('x402DismissBtn');
             const closeBtn = document.getElementById('x402CloseBtn');
@@ -1160,6 +1168,7 @@ app.get('/', (req, res) => {
 
             function cleanup() {
                 modal.style.display = 'none';
+                if (checkoutUiBtn) checkoutUiBtn.onclick = null;
                 settleBtn.onclick = null;
                 dismissBtn.onclick = null;
                 closeBtn.onclick = null;
@@ -1173,6 +1182,81 @@ app.get('/', (req, res) => {
                 cleanup();
             };
 
+            // Option 1: Official Razorpay Standard Checkout UI Modal
+            if (checkoutUiBtn) {
+                checkoutUiBtn.onclick = () => {
+                    if (typeof Razorpay === 'undefined') {
+                        alert('Razorpay Checkout SDK is still loading. Please try again in 2 seconds.');
+                        return;
+                    }
+
+                    log('[Razorpay Checkout] 🚀 Opening official Razorpay payment modal for Order: ' + challenge.razorpay_order_id, 'info');
+
+                    const options = {
+                        key: challenge.razorpay_key_id || 'rzp_test_TX3JklSxdGOmx0',
+                        amount: Number(challenge.amount) * 100,
+                        currency: challenge.currency || 'INR',
+                        name: 'Razorpay ACP Store',
+                        description: 'AP2 / X-402 Mandate Settlement',
+                        image: 'http://localhost:5173/images/green_sneaker.png',
+                        order_id: challenge.razorpay_order_id,
+                        handler: async function(response) {
+                            log('[Razorpay Checkout] ✅ Payment captured on Razorpay! Payment ID: ' + response.razorpay_payment_id, 'success');
+                            log('[Razorpay Checkout] 🔐 Submitting signature proof to X-402 Gateway...', 'info');
+
+                            try {
+                                const res = await fetch('/api/x402-settle-signature', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        order_ref: challenge.order_ref,
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_signature: response.razorpay_signature,
+                                        cartMandate: cartMandate,
+                                        paymentMandate: paymentMandate
+                                    })
+                                });
+                                const receipt = await res.json();
+                                cleanup();
+
+                                if (receipt.success && receipt.status === 'confirmed') {
+                                    log('[X-402] 🏆 Settlement 100% CONFIRMED by Gateway! Payment ID: ' + receipt.payment_id, 'success');
+                                    showSuccessModal(
+                                        '🎉 Payment Settlement Successful!',
+                                        '<div style="text-align:left; background:rgba(0,0,0,0.5); padding:12px; border-radius:10px; font-family:monospace; font-size:0.8rem; display:flex; flex-direction:column; gap:4px; margin-bottom:12px;">' +
+                                        '<div><strong style="color:#a5b4fc;">Status:</strong> <span style="color:#34d399;">HTTP 200 OK (CONFIRMED)</span></div>' +
+                                        '<div><strong style="color:#a5b4fc;">Order Ref:</strong> ' + receipt.order_ref + '</div>' +
+                                        '<div><strong style="color:#a5b4fc;">Razorpay Order ID:</strong> ' + response.razorpay_order_id + '</div>' +
+                                        '<div><strong style="color:#a5b4fc;">Razorpay Payment ID:</strong> <span style="color:#fbbf24;">' + receipt.payment_id + '</span></div>' +
+                                        '<div><strong style="color:#a5b4fc;">Amount Paid:</strong> ₹' + receipt.amount + ' ' + receipt.currency + '</div>' +
+                                        '<div><strong style="color:#a5b4fc;">Settlement Rail:</strong> Razorpay (Test Mode Live)</div>' +
+                                        '</div>' +
+                                        '<div style="color:#c7d2fe; font-size:0.82rem;">AP2 Mandate Chain cryptographically verified and captured on gateway.</div>'
+                                    );
+                                } else {
+                                    alert('Settlement failed: ' + (receipt.error || 'Unknown error'));
+                                }
+                            } catch (err) {
+                                log('[Razorpay Checkout] Error: ' + err.message, 'error');
+                            }
+                        },
+                        prefill: {
+                            name: 'Agent Test User',
+                            email: 'agent.user@example.com',
+                            contact: '9999999999'
+                        },
+                        theme: {
+                            color: '#6366f1'
+                        }
+                    };
+
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                };
+            }
+
+            // Option 2: 1-Click Auto Settle (Agent Simulation)
             settleBtn.onclick = async () => {
                 settleBtn.disabled = true;
                 settleBtn.innerHTML = '⏳ Settling with Razorpay Test Mode...';
@@ -1199,6 +1283,7 @@ app.get('/', (req, res) => {
                             '<div style="text-align:left; background:rgba(0,0,0,0.5); padding:12px; border-radius:10px; font-family:monospace; font-size:0.8rem; display:flex; flex-direction:column; gap:4px; margin-bottom:12px;">' +
                             '<div><strong style="color:#a5b4fc;">Status:</strong> <span style="color:#34d399;">HTTP 200 OK (CONFIRMED)</span></div>' +
                             '<div><strong style="color:#a5b4fc;">Order Ref:</strong> ' + receipt.order_ref + '</div>' +
+                            '<div><strong style="color:#a5b4fc;">Razorpay Order ID:</strong> ' + challenge.razorpay_order_id + '</div>' +
                             '<div><strong style="color:#a5b4fc;">Payment ID:</strong> <span style="color:#fbbf24;">' + receipt.payment_id + '</span></div>' +
                             '<div><strong style="color:#a5b4fc;">Amount Paid:</strong> ₹' + receipt.amount + ' ' + receipt.currency + '</div>' +
                             '<div><strong style="color:#a5b4fc;">Settlement Rail:</strong> Razorpay (Test Mode)</div>' +
@@ -1484,6 +1569,42 @@ app.post('/api/x402-settle', async (req, res) => {
     res.status(settleRes.status).json(receipt);
   } catch (err) {
     console.error('[Smart Router] Settlement error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Endpoint: Settle X-402 with genuine Razorpay Checkout Signature
+app.post('/api/x402-settle-signature', async (req, res) => {
+  try {
+    const { order_ref, razorpay_order_id, razorpay_payment_id, razorpay_signature, cartMandate, paymentMandate } = req.body;
+    if (!order_ref || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ success: false, error: 'order_ref, razorpay_order_id, razorpay_payment_id, and razorpay_signature are required' });
+    }
+
+    console.log(`[Smart Router] Settling X-402 with live Razorpay signature for order: ${order_ref}...`);
+
+    const paymentSigHeader = {
+      order_ref: order_ref,
+      razorpay_order_id: razorpay_order_id,
+      razorpay_payment_id: razorpay_payment_id,
+      razorpay_signature: razorpay_signature
+    };
+
+    const settleRes = await fetch('http://localhost:6004/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cart-Mandate': Buffer.from(JSON.stringify(cartMandate)).toString('base64'),
+        'Payment-Mandate': Buffer.from(JSON.stringify(paymentMandate)).toString('base64'),
+        'Payment-Signature': Buffer.from(JSON.stringify(paymentSigHeader)).toString('base64')
+      }
+    });
+
+    const receipt = await settleRes.json();
+    console.log(`[Smart Router] Live Razorpay Settlement Status: ${settleRes.status}`);
+    res.status(settleRes.status).json(receipt);
+  } catch (err) {
+    console.error('[Smart Router] Settle signature error:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });

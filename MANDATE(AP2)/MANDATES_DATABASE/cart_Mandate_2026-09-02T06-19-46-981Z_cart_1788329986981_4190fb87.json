@@ -1,0 +1,19 @@
+{
+  "id": "cart_1788329986981_4190fb87",
+  "type": "cart",
+  "parent_id": "intent_1788329986970_6fd7db45",
+  "agent_id": "agent_myshoppingapp_prod_01",
+  "merchant_id": "merchant_acp_razorpay_001",
+  "line_items": [
+    {
+      "id": "shoe_002",
+      "name": "Dify Magsic Chunky Sneaker",
+      "price": 1899,
+      "quantity": 1
+    }
+  ],
+  "total_amount": 1899,
+  "currency": "INR",
+  "signed_at": "2026-09-02T06:19:46.980Z",
+  "signature": "9ed9d1e0355016ee07709aef77708ce3625ca81d971353fa0618c56911bb8d63"
+}
