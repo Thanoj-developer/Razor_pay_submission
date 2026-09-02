@@ -1,0 +1,25 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "IntentMandate"
+  ],
+  "issuer": "did:example:user123456789",
+  "issuanceDate": "2026-09-01T16:30:55.563Z",
+  "credentialSubject": {
+    "authorizedItem": "Nike Air Jordan 1 Low",
+    "spendLimit": {
+      "amount": 1999,
+      "currency": "INR"
+    }
+  },
+  "proof": {
+    "type": "EcdsaSecp256r1Signature2019",
+    "created": "2026-09-01T16:30:55.563Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:example:user123456789#key-1",
+    "signatureValue": "MEUCIDFvLxI7zweFsSq0bg5VR0uNn702uaeBs+jpC0pV/tr4AiEAuxEnPLEAj4idKQBYMx/A+vYeZs1AKza08maJu7E3MjQ="
+  }
+}
