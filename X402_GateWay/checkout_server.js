@@ -67,7 +67,21 @@ async function handleCheckout(req, res) {
       const amount = Number(cartMandate.total_amount);
       const currency = cartMandate.currency || 'INR';
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min window
-      const razorpayOrderId = `order_rzp_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+
+      // Generate real live Razorpay order via Razorpay API
+      let razorpayOrderId = `order_rzp_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+      try {
+        const { createRazorpayOrder } = require('../Razorpay_Test_Mode/razorpay_service');
+        const liveOrder = await createRazorpayOrder(amount, currency, orderRef, {
+          cart_mandate_id: cartMandate.id,
+          payment_mandate_id: paymentMandate.id
+        });
+        if (liveOrder && liveOrder.id) {
+          razorpayOrderId = liveOrder.id;
+        }
+      } catch (rzpErr) {
+        console.warn('[X402 Gateway] Razorpay live order creation fallback:', rzpErr.message);
+      }
 
       const orderRow = {
         order_ref: orderRef,
