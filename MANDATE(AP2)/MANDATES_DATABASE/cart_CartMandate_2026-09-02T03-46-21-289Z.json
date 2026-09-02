@@ -1,0 +1,36 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "CartMandate"
+  ],
+  "issuer": "did:example:user123456789",
+  "issuanceDate": "2026-09-02T03:46:21.286Z",
+  "credentialSubject": {
+    "merchantId": "merchant_acp_razorpay_001",
+    "merchantName": "Razorpay ACP Store",
+    "cart": {
+      "items": [
+        {
+          "id": "shoe_007",
+          "name": "Converse Street Sneaker",
+          "sku": "shoe_007",
+          "unitPrice": 1299,
+          "quantity": 1
+        }
+      ],
+      "currency": "INR",
+      "totalAmount": 1299
+    },
+    "status": "USER_CONSENT_APPROVED"
+  },
+  "proof": {
+    "type": "EcdsaSecp256r1Signature2019",
+    "created": "2026-09-02T03:46:21.286Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:example:user123456789#key-1",
+    "signatureValue": "MEYCIQDceGvIJZ992wW4VFxGJKWtb7Iy/EDBv6QpK+KoLagtXgIhAPxRBYI0tD/toi5nbYNu21DHNe38Yh6gUgYeBam+YQdQ"
+  }
+}

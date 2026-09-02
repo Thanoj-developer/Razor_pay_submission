@@ -1,0 +1,25 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "IntentMandate"
+  ],
+  "issuer": "did:example:user123456789",
+  "issuanceDate": "2026-09-02T03:50:00.309Z",
+  "credentialSubject": {
+    "authorizedItem": "Converse Street Sneaker",
+    "spendLimit": {
+      "amount": 1299,
+      "currency": "INR"
+    }
+  },
+  "proof": {
+    "type": "EcdsaSecp256r1Signature2019",
+    "created": "2026-09-02T03:50:00.309Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:example:user123456789#key-1",
+    "signatureValue": "MEUCICg+rQ9B2BoVfcBfJOfkpqK2HRqW2HPVnjd8WXLHTsRzAiEAgHVcwf5eo42G3DEEFCbspCz2iXgmqpTuTa6FIRYp99I="
+  }
+}

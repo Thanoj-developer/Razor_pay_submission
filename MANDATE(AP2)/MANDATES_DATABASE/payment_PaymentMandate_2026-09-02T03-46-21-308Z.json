@@ -1,0 +1,30 @@
+{
+  "@context": [
+    "https://www.w3.org/2018/credentials/v1"
+  ],
+  "type": [
+    "VerifiableCredential",
+    "PaymentMandate"
+  ],
+  "issuer": "did:example:user123456789",
+  "issuanceDate": "2026-09-02T03:46:21.303Z",
+  "credentialSubject": {
+    "paymentMethod": "token_rzp_test_card_9918",
+    "paymentGateway": "Razorpay",
+    "amount": 1299,
+    "currency": "INR",
+    "humanPresent": true,
+    "cartMandateRef": "cart_CartMandate",
+    "intentMandateRef": "intent_IntentMandate",
+    "merchantId": "merchant_acp_razorpay_001",
+    "merchantName": "Razorpay ACP Store",
+    "validationStatus": "PASSED_AP2_COMPARISON"
+  },
+  "proof": {
+    "type": "EcdsaSecp256r1Signature2019",
+    "created": "2026-09-02T03:46:21.303Z",
+    "proofPurpose": "assertionMethod",
+    "verificationMethod": "did:example:user123456789#key-1",
+    "signatureValue": "MEUCIBJK6QUl+XbjVGth3CoW5bcOf/A872GX5I9xAwr0NIISAiEAmAMyXRyb/TWJqdKUlm3w5ODoWJCWyCVL8NFDCtIceak="
+  }
+}

@@ -460,6 +460,11 @@ app.get('/', (req, res) => {
             color: #34d399;
             border: 1px solid rgba(16, 185, 129, 0.4);
         }
+        .mandate-badge.payment {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
 
         /* Modals */
         .modal-overlay {
@@ -643,6 +648,69 @@ app.get('/', (req, res) => {
         </div>
     </div>
 
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- X-402 PAYMENT REQUIRED CHALLENGE MODAL (Port 6003)                   -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <div id="x402Modal" class="modal-overlay">
+        <div class="consent-modal-card" style="border-color: rgba(245, 158, 11, 0.6); box-shadow: 0 0 45px rgba(245, 158, 11, 0.25);">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                <div>
+                    <div style="font-size: 1.1rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                        🛡️ HTTP 402 PAYMENT REQUIRED
+                    </div>
+                    <div style="font-size: 0.76rem; color: #9ca3af; margin-top: 2px;">
+                        X-402 Autonomous Payment Challenge Issued by Gateway
+                    </div>
+                </div>
+                <span id="x402CloseBtn" style="color: #6b7280; font-size: 1.2rem; cursor: pointer;">&times;</span>
+            </div>
+
+            <!-- Challenge Details Card -->
+            <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; font-family: monospace;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+                    <span style="color: #9ca3af;">Protocol Status:</span>
+                    <span style="color: #fbbf24; font-weight: 700;">HTTP 402 Payment Required</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+                    <span style="color: #9ca3af;">Order Ref:</span>
+                    <span id="x402OrderRef" style="color: #38bdf8; font-weight: 600;">order_ref_...</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+                    <span style="color: #9ca3af;">Amount Due:</span>
+                    <span id="x402Amount" style="color: #34d399; font-weight: 700; font-size: 0.95rem;">₹1299 INR</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+                    <span style="color: #9ca3af;">Challenge Nonce:</span>
+                    <span id="x402Nonce" style="color: #e5e7eb; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">1c16ad41...</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+                    <span style="color: #9ca3af;">Razorpay Order ID:</span>
+                    <span id="x402RzpOrderId" style="color: #a5b4fc;">order_rzp_...</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
+                    <span style="color: #9ca3af;">Settlement Rail:</span>
+                    <span style="color: #38bdf8;">Razorpay (Test Mode)</span>
+                </div>
+            </div>
+
+            <!-- Notice -->
+            <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: #fde68a; line-height: 1.45;">
+                ℹ️ <strong>X-402 Challenge Active:</strong> No funds have been deducted yet. The merchant requires a cryptographically signed settlement proof (Razorpay Test Mode signature) to finalize this transaction.
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 10px; margin-top: 4px;">
+                <button id="x402DismissBtn" style="flex: 1; padding: 11px 16px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #e5e7eb; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer;">
+                    🔍 Keep Unsettled
+                </button>
+                <button id="x402SettleBtn" style="flex: 2; padding: 11px 16px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);">
+                    ⚡ Settle via Razorpay Test Mode
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- OTP Modal (HITL) -->
     <div id="otpModal" class="modal-overlay">
         <div class="modal-card">
@@ -668,9 +736,10 @@ app.get('/', (req, res) => {
 
     <!-- Success Modal -->
     <div id="successModal" class="modal-overlay">
-        <div class="modal-card" style="text-align: center;">
+        <div class="modal-card" style="text-align: center; max-width: 480px;">
             <div style="font-size: 2.8rem; margin-bottom: 10px;">🎉</div>
-            <div id="successModalMsg" style="color: #38bdf8; font-size: 1rem; font-weight: 600; margin-bottom: 18px;">Task Completed!</div>
+            <div id="successModalTitle" style="color: #38bdf8; font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">Order &amp; Mandate Complete!</div>
+            <div id="successModalMsg" style="color: #e5e7eb; font-size: 0.88rem; line-height: 1.5; margin-bottom: 18px;">Payment details and settlement receipt will appear here.</div>
             <button id="successModalClose" style="padding: 9px 24px; background: var(--accent-primary-gradient); border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer;">Close</button>
         </div>
     </div>
@@ -847,6 +916,14 @@ app.get('/', (req, res) => {
                 await sendHitlResponse(d.sessionId, idx);
             });
 
+            // ── X-402 Challenge Prompt (Port 6003) ──
+            es.addEventListener('x402_challenge', async (e) => {
+                const d = JSON.parse(e.data);
+                log('[X-402] 🛡️ HTTP 402 Payment Required Challenge received from Gateway!', 'info');
+                log('[X-402] Order Ref: ' + (d.challenge?.order_ref || '') + ' | Nonce: ' + (d.challenge?.nonce || ''), 'info');
+                showX402Modal(d.challenge, d.cartMandate, d.paymentMandate);
+            });
+
             es.addEventListener('done', (e) => {
                 const d = JSON.parse(e.data);
                 es.close();
@@ -933,10 +1010,11 @@ app.get('/', (req, res) => {
                     list.forEach(m => {
                         const div = document.createElement('div');
                         div.className = 'mandate-item';
-                        const isIntent = m.type && m.type.toLowerCase().includes('intent');
+                        const typeLower = (m.type || '').toLowerCase();
+                        const badgeClass = typeLower.includes('payment') ? 'payment' : (typeLower.includes('intent') ? 'intent' : 'cart');
                         div.innerHTML = 
                             '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-                                '<span class="mandate-badge ' + (isIntent ? 'intent' : 'cart') + '">' + (m.type || 'Mandate') + '</span>' +
+                                '<span class="mandate-badge ' + badgeClass + '">' + (m.type || 'Mandate') + '</span>' +
                                 '<span style="font-size:0.75rem; color:#34d399; font-weight:700;">₹' + (m.amount || '') + ' ' + (m.currency || '') + '</span>' +
                             '</div>' +
                             '<div style="font-size:0.8rem; font-weight:600; color:#ffffff; margin-top:2px;">' + (m.item || 'General Product') + '</div>' +
@@ -1062,9 +1140,86 @@ app.get('/', (req, res) => {
             });
         }
 
-        function showSuccessModal(msg) {
+        // ── X-402 Challenge Modal Logic (Port 6003) ──
+        function showX402Modal(challenge, cartMandate, paymentMandate) {
+            const modal = document.getElementById('x402Modal');
+            const orderRefEl = document.getElementById('x402OrderRef');
+            const amountEl = document.getElementById('x402Amount');
+            const nonceEl = document.getElementById('x402Nonce');
+            const rzpOrderEl = document.getElementById('x402RzpOrderId');
+            const settleBtn = document.getElementById('x402SettleBtn');
+            const dismissBtn = document.getElementById('x402DismissBtn');
+            const closeBtn = document.getElementById('x402CloseBtn');
+
+            orderRefEl.textContent = challenge?.order_ref || 'order_ref_pending';
+            amountEl.textContent = '₹' + (challenge?.amount || '1299') + ' ' + (challenge?.currency || 'INR');
+            nonceEl.textContent = challenge?.nonce || 'nonce_active';
+            rzpOrderEl.textContent = challenge?.razorpay_order_id || 'order_rzp_mock';
+
+            modal.style.display = 'flex';
+
+            function cleanup() {
+                modal.style.display = 'none';
+                settleBtn.onclick = null;
+                dismissBtn.onclick = null;
+                closeBtn.onclick = null;
+            }
+
+            dismissBtn.onclick = () => {
+                cleanup();
+                log('[X-402] User kept challenge in unsettled status for protocol inspection.', 'info');
+            };
+            closeBtn.onclick = () => {
+                cleanup();
+            };
+
+            settleBtn.onclick = async () => {
+                settleBtn.disabled = true;
+                settleBtn.innerHTML = '⏳ Settling with Razorpay Test Mode...';
+                log('[X-402] Sending Payment-Signature settlement request to Gateway...', 'info');
+
+                try {
+                    const res = await fetch('/api/x402-settle', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            order_ref: challenge.order_ref,
+                            razorpay_order_id: challenge.razorpay_order_id,
+                            cartMandate: cartMandate,
+                            paymentMandate: paymentMandate
+                        })
+                    });
+                    const receipt = await res.json();
+                    cleanup();
+
+                    if (receipt.success && receipt.status === 'confirmed') {
+                        log('[X-402] ✅ Settlement CONFIRMED! Payment ID: ' + receipt.payment_id, 'success');
+                        showSuccessModal(
+                            '🎉 Payment Settlement Successful!',
+                            '<div style="text-align:left; background:rgba(0,0,0,0.5); padding:12px; border-radius:10px; font-family:monospace; font-size:0.8rem; display:flex; flex-direction:column; gap:4px; margin-bottom:12px;">' +
+                            '<div><strong style="color:#a5b4fc;">Status:</strong> <span style="color:#34d399;">HTTP 200 OK (CONFIRMED)</span></div>' +
+                            '<div><strong style="color:#a5b4fc;">Order Ref:</strong> ' + receipt.order_ref + '</div>' +
+                            '<div><strong style="color:#a5b4fc;">Payment ID:</strong> <span style="color:#fbbf24;">' + receipt.payment_id + '</span></div>' +
+                            '<div><strong style="color:#a5b4fc;">Amount Paid:</strong> ₹' + receipt.amount + ' ' + receipt.currency + '</div>' +
+                            '<div><strong style="color:#a5b4fc;">Settlement Rail:</strong> Razorpay (Test Mode)</div>' +
+                            '</div>' +
+                            '<div style="color:#c7d2fe; font-size:0.82rem;">AP2 Mandate Chain cryptographically verified and captured on gateway.</div>'
+                        );
+                    } else {
+                        log('[X-402] ❌ Settlement failed: ' + (receipt.error || 'Unknown error'), 'error');
+                        alert('Settlement failed: ' + (receipt.error || 'Unknown'));
+                    }
+                } catch (err) {
+                    cleanup();
+                    log('[X-402] ❌ Settlement network error: ' + err.message, 'error');
+                }
+            };
+        }
+
+        function showSuccessModal(title, msgHtml) {
             const modal = document.getElementById('successModal');
-            document.getElementById('successModalMsg').textContent = msg;
+            document.getElementById('successModalTitle').innerHTML = title || 'Task Completed!';
+            document.getElementById('successModalMsg').innerHTML = msgHtml || 'Operation finished.';
             modal.style.display = 'flex';
             document.getElementById('successModalClose').onclick = () => {
                 modal.style.display = 'none';
@@ -1169,6 +1324,11 @@ app.get('/api/voice-route/stream', async (req, res) => {
     onOptionSelect: (action) => new Promise((resolve) => {
       sendEvent('option_select_prompt', { index: action.index, options: action.options, sessionId });
       hitlPending.set(sessionId + '_hitl', resolve);
+    }),
+    onX402Challenge: (payload) => new Promise((resolve) => {
+      console.log(`[Smart Router HITL] Broadcasting X-402 Challenge on port 6003 for session ${sessionId}`);
+      sendEvent('x402_challenge', { ...payload, sessionId });
+      resolve(true);
     }),
   };
 
@@ -1280,6 +1440,51 @@ app.post('/api/voice-autonavigate/hitl-response', (req, res) => {
     res.json({ success: true });
   } else {
     res.status(404).json({ success: false, error: 'No pending HITL for this session' });
+  }
+});
+
+// Endpoint: Execute Razorpay Test Settlement for an X-402 Challenge
+app.post('/api/x402-settle', async (req, res) => {
+  try {
+    const { order_ref, razorpay_order_id, cartMandate, paymentMandate } = req.body;
+    if (!order_ref || !razorpay_order_id) {
+      return res.status(400).json({ success: false, error: 'order_ref and razorpay_order_id are required' });
+    }
+
+    console.log(`[Smart Router] Settling X-402 Challenge for order: ${order_ref}...`);
+
+    // 1. Simulate user completing Razorpay payment and obtaining HMAC signature
+    const simRes = await fetch('http://localhost:6004/api/simulate-razorpay-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ razorpay_order_id })
+    });
+    const paymentProof = await simRes.json();
+
+    // 2. Submit Payment-Signature to finalize settlement on X-402 Gateway
+    const paymentSigHeader = {
+      order_ref: order_ref,
+      razorpay_order_id: paymentProof.razorpay_order_id,
+      razorpay_payment_id: paymentProof.razorpay_payment_id,
+      razorpay_signature: paymentProof.razorpay_signature
+    };
+
+    const settleRes = await fetch('http://localhost:6004/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cart-Mandate': Buffer.from(JSON.stringify(cartMandate)).toString('base64'),
+        'Payment-Mandate': Buffer.from(JSON.stringify(paymentMandate)).toString('base64'),
+        'Payment-Signature': Buffer.from(JSON.stringify(paymentSigHeader)).toString('base64')
+      }
+    });
+
+    const receipt = await settleRes.json();
+    console.log(`[Smart Router] Settlement completed! Gateway Status: ${settleRes.status}`);
+    res.status(settleRes.status).json(receipt);
+  } catch (err) {
+    console.error('[Smart Router] Settlement error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

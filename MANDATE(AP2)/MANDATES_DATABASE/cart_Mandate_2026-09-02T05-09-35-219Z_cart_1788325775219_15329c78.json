@@ -1,0 +1,19 @@
+{
+  "id": "cart_1788325775219_15329c78",
+  "type": "cart",
+  "parent_id": "intent_1788325775213_0b0e0bec",
+  "agent_id": "agent_myshoppingapp_prod_01",
+  "merchant_id": "merchant_acp_razorpay_001",
+  "line_items": [
+    {
+      "id": "shoe_007",
+      "name": "Converse Street Sneaker",
+      "price": 1299,
+      "quantity": 1
+    }
+  ],
+  "total_amount": 1299,
+  "currency": "INR",
+  "signed_at": "2026-09-02T05:09:35.219Z",
+  "signature": "6313b26c9d1ed06ddca82415a983dc2043af273bacf789000608259ec38c8de6"
+}

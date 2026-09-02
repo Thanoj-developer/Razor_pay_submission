@@ -1,0 +1,19 @@
+{
+  "id": "cart_1788325900641_7a548f16",
+  "type": "cart",
+  "parent_id": "intent_1788325900631_e10d2471",
+  "agent_id": "agent_myshoppingapp_prod_01",
+  "merchant_id": "merchant_acp_razorpay_001",
+  "line_items": [
+    {
+      "id": "shoe_006",
+      "name": "Woodland Leather Boot",
+      "price": 1599,
+      "quantity": 1
+    }
+  ],
+  "total_amount": 1599,
+  "currency": "INR",
+  "signed_at": "2026-09-02T05:11:40.641Z",
+  "signature": "da4cfb6a4cd06f4dc2953c876ed76ac82af2d8d82b344c45ebb78f358cfb4bf9"
+}

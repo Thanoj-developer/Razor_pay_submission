@@ -137,31 +137,73 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
       // --- AP2 Mandate Generation & Cryptographic Signing ---
       let createdIntentMandate = null;
       let createdCartMandate = null;
+      let createdPaymentMandate = null;
       try {
-        const { createIntentMandate, createCartMandate } = require('../MANDATE(AP2)/Mandate');
-        
-        // 1. Create and sign Intent Mandate matching Expected_Mandate.json
-        createdIntentMandate = createIntentMandate({
-          authorizedItem: product.name,
-          amount: product.price,
-          currency: product.currency,
-          saveToDisk: true
-        });
+        const {
+          createIntentMandate,
+          createCartMandate,
+          createPaymentMandate,
+          verifyMandateChain
+        } = require('../X402_GateWay/mandates');
 
-        // 2. Create and sign Cart Mandate
-        createdCartMandate = createCartMandate({
-          productId: product.id,
-          productName: product.name,
-          price: product.price,
-          currency: product.currency,
-          merchantId: 'merchant_acp_razorpay_001',
-          merchantName: 'Razorpay ACP Store',
-          saveToDisk: true
-        });
+        // 1. Create and sign Intent Mandate
+        createdIntentMandate = createIntentMandate(
+          { id: 'user_001' },
+          { id: product.id, merchantId: 'merchant_acp_razorpay_001' },
+          product.price
+        );
 
-        console.log(`[AutoNavigation AP2] ✅ Intent & Cart Mandates generated & signed in MANDATE(AP2)/MANDATES_DATABASE!`);
+        // 2. Create and sign Cart Mandate with validation
+        createdCartMandate = createCartMandate(
+          createdIntentMandate,
+          [{ id: product.id, name: product.name, price: product.price, quantity: 1 }],
+          'merchant_acp_razorpay_001'
+        );
+
+        // 3. Create and sign Payment Mandate
+        createdPaymentMandate = createPaymentMandate(createdCartMandate);
+
+        // 4. Verify Mandate Chain
+        verifyMandateChain(createdCartMandate, createdPaymentMandate);
+        console.log(`[AutoNavigation AP2] ✅ Intent, Cart, & Payment Mandates successfully created, signed & verified! (Payment Mandate ID: ${createdPaymentMandate.id})`);
+
+        // 5. Trigger X-402 Challenge on Gateway (Port 6004)
+        console.log(`[AutoNavigation X-402] Sending checkout request with Mandates to X-402 Gateway (http://localhost:6004/checkout)...`);
+        let x402Challenge = null;
+        try {
+          const x402Res = await fetch('http://localhost:6004/checkout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cart-Mandate': Buffer.from(JSON.stringify(createdCartMandate)).toString('base64'),
+              'Payment-Mandate': Buffer.from(JSON.stringify(createdPaymentMandate)).toString('base64')
+            }
+          });
+
+          console.log(`[AutoNavigation X-402] Gateway returned Status: ${x402Res.status} (HTTP 402 Payment Required)`);
+          const challengeHeader = x402Res.headers.get('payment-required');
+          if (challengeHeader) {
+            x402Challenge = JSON.parse(Buffer.from(challengeHeader, 'base64').toString('utf8'));
+          } else {
+            const data = await x402Res.json();
+            x402Challenge = data.challenge;
+          }
+
+          if (hitlCallbacks.onX402Challenge) {
+            console.log(`[AutoNavigation X-402] Presenting HTTP 402 Challenge on localhost:6003:`, x402Challenge);
+            await hitlCallbacks.onX402Challenge({
+              challenge: x402Challenge,
+              cartMandate: createdCartMandate,
+              paymentMandate: createdPaymentMandate,
+              product: product
+            });
+          }
+        } catch (x402Err) {
+          console.warn('[AutoNavigation X-402] Gateway call error:', x402Err.message);
+        }
       } catch (mandateErr) {
         console.warn('[AutoNavigation AP2] Warning during mandate creation:', mandateErr.message);
+        return { success: false, status: 'halted', reason: `AP2 Mandate Error: ${mandateErr.message}` };
       }
     }
 
