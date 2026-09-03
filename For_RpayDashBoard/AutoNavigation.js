@@ -165,6 +165,26 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
         merchantName: 'Razorpay ACP Store'
       };
 
+      if (hitlCallbacks.onTracingStep) {
+        hitlCallbacks.onTracingStep({
+          stage: 2,
+          status: 'completed',
+          data: {
+            productId: product.id,
+            productName: product.name,
+            price: product.price,
+            currency: product.currency,
+            elementIndex: actionData.index,
+            action: 'click'
+          }
+        });
+        hitlCallbacks.onTracingStep({
+          stage: 3,
+          status: 'current',
+          data: { product, surface: 'Trusted Consent Surface Modal' }
+        });
+      }
+
       const cart = {
         cartId: 'cart_' + Math.random().toString(36).substring(2, 9),
         merchantId: 'merchant_acp_razorpay_001',
@@ -189,10 +209,30 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
       
       if (!isApproved) {
         console.log('[AutoNavigation HITL] User rejected cart consent on localhost:6003.');
+        if (hitlCallbacks.onTracingStep) {
+          hitlCallbacks.onTracingStep({
+            stage: 3,
+            status: 'failed',
+            errorReason: 'User clicked Deny on the Trusted Consent Surface Modal.'
+          });
+        }
         return { success: false, status: 'halted', reason: 'Cart authorization was rejected by user on Trusted Consent Surface.' };
       }
 
       console.log('[AutoNavigation HITL] User approved cart consent on localhost:6003! Creating and signing cryptographic Mandate (AP2)...');
+      if (hitlCallbacks.onTracingStep) {
+        hitlCallbacks.onTracingStep({
+          stage: 3,
+          status: 'completed',
+          data: {
+            decision: 'Approved',
+            cartId: cart.cartId,
+            totalAmount: cart.totalAmount,
+            currency: cart.currency
+          }
+        });
+        hitlCallbacks.onTracingStep({ stage: 4, status: 'current' });
+      }
 
       // --- AP2 Mandate Generation & Cryptographic Signing ---
       let createdIntentMandate = null;
@@ -219,6 +259,21 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
           [{ id: product.id, name: product.name, price: product.price, quantity: 1 }],
           'merchant_acp_razorpay_001'
         );
+
+        if (hitlCallbacks.onTracingStep) {
+          hitlCallbacks.onTracingStep({
+            stage: 4,
+            status: 'completed',
+            data: {
+              mandateType: 'cart_mandate',
+              mandateId: createdCartMandate.id,
+              totalAmount: createdCartMandate.total_amount,
+              currency: createdCartMandate.currency || 'INR',
+              signature: createdCartMandate.signature
+            }
+          });
+          hitlCallbacks.onTracingStep({ stage: 5, status: 'current' });
+        }
 
         // 3. Create and sign Payment Mandate
         createdPaymentMandate = createPaymentMandate(createdCartMandate);
@@ -249,6 +304,22 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
             x402Challenge = data.challenge;
           }
 
+          if (hitlCallbacks.onTracingStep) {
+            hitlCallbacks.onTracingStep({
+              stage: 5,
+              status: 'completed',
+              data: {
+                paymentMandateId: createdPaymentMandate.id,
+                httpStatus: 402,
+                orderRef: x402Challenge?.order_ref,
+                nonce: x402Challenge?.nonce,
+                razorpayOrderId: x402Challenge?.razorpay_order_id,
+                expiresAt: x402Challenge?.expires_at
+              }
+            });
+            hitlCallbacks.onTracingStep({ stage: 6, status: 'current' });
+          }
+
           if (hitlCallbacks.onX402Challenge) {
             console.log(`[AutoNavigation X-402] Presenting HTTP 402 Challenge on localhost:6003:`, x402Challenge);
             await hitlCallbacks.onX402Challenge({
@@ -260,9 +331,23 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
           }
         } catch (x402Err) {
           console.warn('[AutoNavigation X-402] Gateway call error:', x402Err.message);
+          if (hitlCallbacks.onTracingStep) {
+            hitlCallbacks.onTracingStep({
+              stage: 5,
+              status: 'failed',
+              errorReason: `X-402 Gateway Error: ${x402Err.message}`
+            });
+          }
         }
       } catch (mandateErr) {
         console.warn('[AutoNavigation AP2] Warning during mandate creation:', mandateErr.message);
+        if (hitlCallbacks.onTracingStep) {
+          hitlCallbacks.onTracingStep({
+            stage: 4,
+            status: 'failed',
+            errorReason: `AP2 Mandate Error: ${mandateErr.message}`
+          });
+        }
         return { success: false, status: 'halted', reason: `AP2 Mandate Error: ${mandateErr.message}` };
       }
     }

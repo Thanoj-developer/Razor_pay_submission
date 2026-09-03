@@ -272,10 +272,16 @@
   <div class="container">
     <!-- Interactive Toolbar -->
     <div class="toolbar">
+      <a href="http://localhost:6003" class="btn btn-gray" style="text-decoration: none;">← Back to Voice Router (:6003)</a>
       <button class="btn btn-green" onclick="advanceStep()">▶ Advance Next Stage</button>
       <button class="btn btn-red" onclick="failAt(3, 'User clicked [Deny] on the Trusted Consent Surface Modal (Stage 3).')">❌ Simulate Denial at Stage 3</button>
       <button class="btn btn-amber" onclick="failAt(6, 'Razorpay payment rejected: Card declined or insufficient balance (Stage 6).')">⚠️ Simulate Rejection at Stage 6</button>
       <button class="btn btn-gray" onclick="resetAll()">🔄 Reset</button>
+    </div>
+
+    <!-- Live Sync Status Banner -->
+    <div id="syncIndicator" style="font-size: 12px; color: #94a3b8; background: rgba(30, 41, 59, 0.7); border: 1px solid #334155; padding: 6px 14px; border-radius: 20px; margin-bottom: 16px; text-align: center; display: inline-flex; align-items: center; gap: 6px;">
+      🟢 <span style="color: #34d399; font-weight: 600;">Live Synced</span> with Terminal on Port 6003
     </div>
 
     <!-- Main Card -->
@@ -468,30 +474,58 @@
     let currentStep = 0;
     const totalSteps = 7;
 
-    function updateUI() {
-      for (let i = 1; i <= totalSteps; i++) {
-        const row = document.getElementById('row-' + i);
-        const circle = row.querySelector('.node-circle');
-        row.className = 'stage-row';
+    function updateStageState(stepNum, status, payload, errorReason) {
+      const row = document.getElementById('row-' + stepNum);
+      if (!row) return;
+      const circle = row.querySelector('.node-circle');
+      row.className = 'stage-row';
 
-        if (i < currentStep) {
-          row.classList.add('completed');
-          circle.innerHTML = '✓';
-        } else if (i === currentStep) {
-          row.classList.add('current');
-          circle.innerHTML = '⚙';
-        } else {
-          circle.innerHTML = i;
+      if (status === 'completed') {
+        row.classList.add('completed');
+        circle.innerHTML = '✓';
+        if (stepNum >= currentStep) currentStep = stepNum + 1;
+      } else if (status === 'current') {
+        row.classList.add('current');
+        circle.innerHTML = '⚙';
+        currentStep = stepNum;
+      } else if (status === 'failed') {
+        row.classList.add('failed');
+        circle.innerHTML = '✕';
+        currentStep = stepNum;
+        const errBox = document.getElementById('err-' + stepNum) || row.querySelector('.error-box');
+        if (errBox) {
+          errBox.innerHTML = `<strong>⚠️ Execution Exception at Stage ${stepNum}:</strong><div style="margin-top:4px; font-family:monospace;">${errorReason || 'Stage execution failed.'}</div>`;
+          errBox.style.display = 'block';
         }
       }
 
-      // Progress bar percentage
-      const progress = currentStep <= 1 ? 0 : Math.min(100, ((currentStep - 1) / (totalSteps - 1)) * 100);
-      document.getElementById('railProgress').style.height = progress + '%';
+      // Update metadata pre if payload provided
+      if (payload) {
+        const metaPre = document.querySelector('#meta-' + stepNum + ' pre');
+        if (metaPre) {
+          metaPre.innerText = JSON.stringify(payload, null, 2);
+        }
+      }
 
-      // Badge
+      // Recalculate progress
+      const completedRows = document.querySelectorAll('.stage-row.completed').length;
+      const hasFail = document.querySelector('.stage-row.failed') !== null;
+      const progress = totalSteps > 1 ? (completedRows / (totalSteps - 1)) * 100 : 0;
+      
+      const rail = document.getElementById('railProgress');
+      rail.style.height = Math.min(100, progress) + '%';
+      rail.style.background = hasFail 
+        ? 'linear-gradient(180deg, #10b981 0%, #ef4444 100%)' 
+        : 'linear-gradient(180deg, #10b981 0%, #059669 100%)';
+
+      // Update Badge
       const badge = document.getElementById('statusBadge');
-      if (currentStep > totalSteps) {
+      if (hasFail) {
+        badge.innerText = `⚠️ Exception at Stage ${currentStep}`;
+        badge.style.color = '#ef4444';
+        badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        badge.style.background = 'rgba(239, 68, 68, 0.15)';
+      } else if (completedRows >= totalSteps) {
         badge.innerText = '✅ Payment Completed (7/7)';
         badge.style.color = '#10b981';
         badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
@@ -506,50 +540,33 @@
 
     function advanceStep() {
       if (currentStep <= totalSteps) {
-        currentStep++;
-        updateUI();
+        updateStageState(Math.max(1, currentStep), 'completed');
+        if (currentStep <= totalSteps) {
+          updateStageState(currentStep, 'current');
+        }
       }
     }
 
     function failAt(stepNum, errorText) {
-      currentStep = stepNum;
-      for (let i = 1; i <= totalSteps; i++) {
-        const row = document.getElementById('row-' + i);
-        const circle = row.querySelector('.node-circle');
-        row.className = 'stage-row';
-
-        if (i < stepNum) {
-          row.classList.add('completed');
-          circle.innerHTML = '✓';
-        } else if (i === stepNum) {
-          row.classList.add('failed');
-          circle.innerHTML = '✕';
-          const errBox = document.getElementById('err-' + stepNum);
-          if (errBox) {
-            errBox.innerHTML = `<strong>⚠️ Execution Exception at Stage ${stepNum}:</strong><div style="margin-top:4px; font-family:monospace;">${errorText}</div>`;
-            errBox.style.display = 'block';
-          }
-        } else {
-          circle.innerHTML = i;
-        }
-      }
-
-      const progress = stepNum <= 1 ? 0 : Math.min(100, ((stepNum - 1) / (totalSteps - 1)) * 100);
-      document.getElementById('railProgress').style.height = progress + '%';
-      document.getElementById('railProgress').style.background = 'linear-gradient(180deg, #10b981 0%, #ef4444 100%)';
-
-      const badge = document.getElementById('statusBadge');
-      badge.innerText = `⚠️ Exception at Stage ${stepNum}`;
-      badge.style.color = '#ef4444';
-      badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-      badge.style.background = 'rgba(239, 68, 68, 0.15)';
+      updateStageState(stepNum, 'failed', null, errorText);
     }
 
     function resetAll() {
       currentStep = 0;
+      for (let i = 1; i <= totalSteps; i++) {
+        const row = document.getElementById('row-' + i);
+        row.className = 'stage-row';
+        row.querySelector('.node-circle').innerHTML = i;
+      }
+      document.getElementById('railProgress').style.height = '0%';
       document.getElementById('railProgress').style.background = 'linear-gradient(180deg, #10b981 0%, #059669 100%)';
       document.querySelectorAll('.error-box').forEach(el => el.style.display = 'none');
-      updateUI();
+      
+      const badge = document.getElementById('statusBadge');
+      badge.innerText = 'Stage 1 of 7 (Ready)';
+      badge.style.color = '#60a5fa';
+      badge.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+      badge.style.background = 'rgba(59, 130, 246, 0.15)';
     }
 
     function toggleMeta(stepNum) {
@@ -559,8 +576,46 @@
       }
     }
 
-    // Initialize
-    updateUI();
+    // ── Connect Real-Time SSE Stream with localhost:6003 ──
+    function connectRealTimeSSE() {
+      try {
+        const es = new EventSource('/api/tracing/stream');
+        
+        es.onopen = () => {
+          console.log('[Tracing UI] Connected to real-time execution stream on Port 6003');
+          const syncIndicator = document.getElementById('syncIndicator');
+          if (syncIndicator) {
+            syncIndicator.innerHTML = '🟢 <span style="color:#34d399; font-weight:600;">Live Synced</span> with Terminal on Port 6003';
+          }
+        };
+
+        es.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'reset') {
+              resetAll();
+            } else if (data.stage) {
+              updateStageState(data.stage, data.status, data.data, data.errorReason);
+            }
+          } catch (err) {
+            console.error('[Tracing UI] Failed to parse SSE event:', err);
+          }
+        };
+
+        es.onerror = () => {
+          const syncIndicator = document.getElementById('syncIndicator');
+          if (syncIndicator) {
+            syncIndicator.innerHTML = '🟡 Reconnecting to Port 6003 stream...';
+          }
+        };
+      } catch (e) {
+        console.warn('[Tracing UI] SSE stream connection note:', e.message);
+      }
+    }
+
+    // Initialize UI and connect stream
+    resetAll();
+    connectRealTimeSSE();
   </script>
 </body>
 </html>

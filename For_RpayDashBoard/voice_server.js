@@ -508,6 +508,62 @@ app.get('/', (req, res) => {
         <!-- Assistant Chat & Confirmation -->
         <div class="chat-box" id="chatBox" style="display: none;"></div>
 
+        <!-- ⚡ REAL-TIME 7-STAGE EXECUTION TRACER WIDGET -->
+        <div class="card" style="margin-bottom: 20px; background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); border: 1px solid #334155;">
+            <div class="card-header" style="border-bottom: 1px solid #334155; padding-bottom: 10px; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.15rem;">⚡</span>
+                    <span class="card-title" style="color: #f8fafc; font-weight: 700;">AP2 / X-402 Live Execution Tracer</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span id="dashTracerStatus" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-weight: 600;">
+                        Stage 1 of 7 (Ready)
+                    </span>
+                    <a href="/tracing" target="_blank" style="background: #2563eb; color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
+                        ↗ Open Full Visualizer
+                    </a>
+                </div>
+            </div>
+
+            <!-- 7-Stage Horizontal Step Bar -->
+            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; position: relative;">
+                <div id="dash-step-1" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                    <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">1</div>
+                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Query Asked</div>
+                </div>
+
+                <div id="dash-step-2" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                    <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">2</div>
+                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Discovery</div>
+                </div>
+
+                <div id="dash-step-3" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                    <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">3</div>
+                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Consent</div>
+                </div>
+
+                <div id="dash-step-4" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                    <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">4</div>
+                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">ACP Mandate</div>
+                </div>
+
+                <div id="dash-step-5" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                    <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">5</div>
+                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">AP2 & X-402</div>
+                </div>
+
+                <div id="dash-step-6" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                    <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">6</div>
+                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Razorpay</div>
+                </div>
+
+                <div id="dash-step-7" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                    <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">7</div>
+                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Confirmed</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Lower Grid: Tabs & Automation Terminal Logs -->
         <div class="grid-2col">
             <!-- Active Tabs Card -->
@@ -871,6 +927,16 @@ app.get('/', (req, res) => {
                 await sendHitlResponse(d.sessionId, idx);
             });
 
+            // ── Real-time Tracing Step Update ──
+            es.addEventListener('tracing_step', (e) => {
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d.stage) {
+                        updateDashboardTracer(d.stage, d.status, d.data, d.errorReason);
+                    }
+                } catch (_) {}
+            });
+
             // ── X-402 Challenge Prompt (Port 6003) ──
             es.addEventListener('x402_challenge', async (e) => {
                 const d = JSON.parse(e.data);
@@ -921,6 +987,91 @@ app.get('/', (req, res) => {
                 }
             };
         }
+
+        // ── Real-time Tracer DOM Synchronization ──
+        function updateDashboardTracer(stageNum, status, data, errorReason) {
+            const stepEl = document.getElementById('dash-step-' + stageNum);
+            const statusBadge = document.getElementById('dashTracerStatus');
+            if (!stepEl) return;
+            const circle = stepEl.querySelector('.dash-step-circle');
+
+            if (status === 'completed') {
+                stepEl.style.background = 'rgba(16, 185, 129, 0.12)';
+                stepEl.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                circle.style.background = '#10b981';
+                circle.style.borderColor = '#059669';
+                circle.style.color = '#ffffff';
+                circle.innerHTML = '✓';
+            } else if (status === 'current') {
+                stepEl.style.background = 'rgba(37, 99, 235, 0.15)';
+                stepEl.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                circle.style.background = '#2563eb';
+                circle.style.borderColor = '#60a5fa';
+                circle.style.color = '#ffffff';
+                circle.innerHTML = '⚙';
+            } else if (status === 'failed') {
+                stepEl.style.background = 'rgba(239, 68, 68, 0.15)';
+                stepEl.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                circle.style.background = '#ef4444';
+                circle.style.borderColor = '#dc2626';
+                circle.style.color = '#ffffff';
+                circle.innerHTML = '✕';
+            }
+
+            if (statusBadge) {
+                if (status === 'failed') {
+                    statusBadge.innerText = '⚠️ Exception at Stage ' + stageNum;
+                    statusBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                    statusBadge.style.color = '#ef4444';
+                    statusBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                } else if (stageNum === 7 && status === 'completed') {
+                    statusBadge.innerText = '✅ Payment Completed (7/7)';
+                    statusBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                    statusBadge.style.color = '#10b981';
+                    statusBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                } else {
+                    statusBadge.innerText = 'Stage ' + stageNum + ' of 7 (' + (status === 'completed' ? 'Done' : 'Active') + ')';
+                    statusBadge.style.background = 'rgba(59, 130, 246, 0.15)';
+                    statusBadge.style.color = '#60a5fa';
+                    statusBadge.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                }
+            }
+        }
+
+        function resetDashboardTracer() {
+            for (let i = 1; i <= 7; i++) {
+                const stepEl = document.getElementById('dash-step-' + i);
+                if (stepEl) {
+                    stepEl.style.background = 'rgba(255,255,255,0.03)';
+                    stepEl.style.borderColor = '#334155';
+                    const circle = stepEl.querySelector('.dash-step-circle');
+                    if (circle) {
+                        circle.style.background = '#1e293b';
+                        circle.style.borderColor = '#475569';
+                        circle.style.color = '#94a3b8';
+                        circle.innerHTML = i;
+                    }
+                }
+            }
+            const statusBadge = document.getElementById('dashTracerStatus');
+            if (statusBadge) {
+                statusBadge.innerText = 'Stage 1 of 7 (Ready)';
+                statusBadge.style.background = 'rgba(59, 130, 246, 0.15)';
+                statusBadge.style.color = '#60a5fa';
+            }
+        }
+
+        // Connect persistent tracer SSE stream
+        try {
+            const globalTraceEs = new EventSource('/api/tracing/stream');
+            globalTraceEs.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'reset') resetDashboardTracer();
+                    else if (data.stage) updateDashboardTracer(data.stage, data.status, data.data, data.errorReason);
+                } catch(_) {}
+            };
+        } catch(_) {}
 
         // ── Active Tabs Auto-Sync ──
         async function loadActiveTabs() {
@@ -1333,6 +1484,36 @@ app.post('/api/route', async (req, res) => {
 // HITL state: pending promise resolvers keyed by session ID
 const hitlPending = new Map();
 
+// Tracing SSE Broadcaster (real-time synchronization for /tracing and dashboard)
+const tracingClients = new Set();
+
+function broadcastTracingEvent(data) {
+  const payload = `data: ${JSON.stringify(data)}\n\n`;
+  for (const client of tracingClients) {
+    try {
+      client.write(payload);
+    } catch (_) {
+      tracingClients.delete(client);
+    }
+  }
+}
+
+// Endpoint: Tracing Real-Time SSE Stream
+app.get('/api/tracing/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+
+  tracingClients.add(res);
+  res.write(`data: ${JSON.stringify({ type: 'connected', message: 'Tracing real-time stream active' })}\n\n`);
+
+  req.on('close', () => {
+    tracingClients.delete(res);
+  });
+});
+
 // Endpoint: Real-time SSE Router Stream (Classifies + Streams Execution)
 app.get('/api/voice-route/stream', async (req, res) => {
   const query = req.query.query;
@@ -1354,7 +1535,15 @@ app.get('/api/voice-route/stream', async (req, res) => {
   }
 
   console.log(`[Smart Router] SSE route started. Session: ${sessionId}, Query: "${query}"`);
-  sendEvent('log', { message: `Classifying command: "${query}"`, type: 'info' });
+  sendEvent('log', { message: `Starting Smart Router execution for: "${query}"`, type: 'info' });
+
+  // Reset & broadcast Stage 1 start to tracer
+  broadcastTracingEvent({ type: 'reset' });
+  broadcastTracingEvent({
+    stage: 1,
+    status: 'current',
+    data: { query, startedAt: new Date().toLocaleTimeString() }
+  });
 
   let inbox;
   try {
@@ -1362,12 +1551,29 @@ app.get('/api/voice-route/stream', async (req, res) => {
     inbox = classified;
     sendEvent('classified', { inbox, confidence, query });
     console.log(`[Smart Router] SSE classified: ${inbox} (${confidence})`);
+
+    // Broadcast Stage 1 completed
+    broadcastTracingEvent({
+      stage: 1,
+      status: 'completed',
+      data: { query, intent: inbox, confidence: String(confidence) }
+    });
+    broadcastTracingEvent({ stage: 2, status: 'current' });
   } catch (err) {
     inbox = INBOX.ORCHESTRATION;
     sendEvent('classified', { inbox, confidence: 'default', query });
+    broadcastTracingEvent({
+      stage: 1,
+      status: 'completed',
+      data: { query, intent: inbox, confidence: 'heuristic' }
+    });
   }
 
   const hitlCallbacks = {
+    onTracingStep: (traceData) => {
+      broadcastTracingEvent(traceData);
+      sendEvent('tracing_step', traceData);
+    },
     onCartConsentPrompt: (cartPayload) => new Promise((resolve) => {
       console.log(`[Smart Router HITL] Cart consent requested on localhost:6003 for: ${cartPayload.product?.name}`);
       sendEvent('cart_consent_prompt', { ...cartPayload, sessionId });
@@ -1580,9 +1786,46 @@ app.post('/api/x402-settle', async (req, res) => {
 
     const receipt = await settleRes.json();
     console.log(`[Smart Router] Settlement completed! Gateway Status: ${settleRes.status}`);
+
+    if (settleRes.status === 200 && receipt.success) {
+      broadcastTracingEvent({
+        stage: 6,
+        status: 'completed',
+        data: {
+          paymentStatus: 'Payment Done (Verified)',
+          paymentId: paymentProof.razorpay_payment_id,
+          razorpayOrderId: paymentProof.razorpay_order_id,
+          razorpaySignature: paymentProof.razorpay_signature
+        }
+      });
+      broadcastTracingEvent({
+        stage: 7,
+        status: 'completed',
+        data: {
+          status: 'confirmed',
+          orderRef: receipt.order_ref,
+          amount: receipt.amount,
+          currency: receipt.currency,
+          nonce_consumed: true,
+          confirmedAt: receipt.confirmed_at || new Date().toISOString()
+        }
+      });
+    } else {
+      broadcastTracingEvent({
+        stage: 6,
+        status: 'failed',
+        errorReason: receipt.error || 'Gateway payment settlement failed.'
+      });
+    }
+
     res.status(settleRes.status).json(receipt);
   } catch (err) {
     console.error('[Smart Router] Settlement error:', err.message);
+    broadcastTracingEvent({
+      stage: 6,
+      status: 'failed',
+      errorReason: err.message
+    });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -1616,9 +1859,46 @@ app.post('/api/x402-settle-signature', async (req, res) => {
 
     const receipt = await settleRes.json();
     console.log(`[Smart Router] Live Razorpay Settlement Status: ${settleRes.status}`);
+
+    if (settleRes.status === 200 && receipt.success) {
+      broadcastTracingEvent({
+        stage: 6,
+        status: 'completed',
+        data: {
+          paymentStatus: 'Payment Done (Live Razorpay)',
+          paymentId: razorpay_payment_id,
+          razorpayOrderId: razorpay_order_id,
+          razorpaySignature: razorpay_signature
+        }
+      });
+      broadcastTracingEvent({
+        stage: 7,
+        status: 'completed',
+        data: {
+          status: 'confirmed',
+          orderRef: receipt.order_ref,
+          amount: receipt.amount,
+          currency: receipt.currency,
+          nonce_consumed: true,
+          confirmedAt: receipt.confirmed_at || new Date().toISOString()
+        }
+      });
+    } else {
+      broadcastTracingEvent({
+        stage: 6,
+        status: 'failed',
+        errorReason: receipt.error || 'Live Razorpay verification failed on Gateway.'
+      });
+    }
+
     res.status(settleRes.status).json(receipt);
   } catch (err) {
     console.error('[Smart Router] Settle signature error:', err.message);
+    broadcastTracingEvent({
+      stage: 6,
+      status: 'failed',
+      errorReason: err.message
+    });
     res.status(500).json({ success: false, error: err.message });
   }
 });
