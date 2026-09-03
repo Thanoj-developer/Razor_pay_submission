@@ -266,6 +266,8 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
             status: 'completed',
             data: {
               mandateType: 'cart_mandate',
+              customerIntentMandate: createdIntentMandate,
+              merchantCartMandate: createdCartMandate,
               mandateId: createdCartMandate.id,
               totalAmount: createdCartMandate.total_amount,
               currency: createdCartMandate.currency || 'INR',
@@ -309,6 +311,8 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
               stage: 5,
               status: 'completed',
               data: {
+                ap2PaymentMandate: createdPaymentMandate,
+                x402Challenge: x402Challenge,
                 paymentMandateId: createdPaymentMandate.id,
                 httpStatus: 402,
                 orderRef: x402Challenge?.order_ref,

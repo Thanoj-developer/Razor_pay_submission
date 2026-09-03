@@ -527,40 +527,58 @@ app.get('/', (req, res) => {
 
             <!-- 7-Stage Horizontal Step Bar -->
             <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; position: relative;">
-                <div id="dash-step-1" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                <div id="dash-step-1" onclick="toggleDashStageDetails(1)" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s; cursor: pointer;">
                     <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">1</div>
                     <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Query Asked</div>
                 </div>
 
-                <div id="dash-step-2" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                <div id="dash-step-2" onclick="toggleDashStageDetails(2)" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s; cursor: pointer;">
                     <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">2</div>
                     <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Discovery</div>
                 </div>
 
-                <div id="dash-step-3" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                <div id="dash-step-3" onclick="toggleDashStageDetails(3)" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s; cursor: pointer;">
                     <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">3</div>
                     <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Consent</div>
                 </div>
 
-                <div id="dash-step-4" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                <div id="dash-step-4" onclick="toggleDashStageDetails(4)" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s; cursor: pointer;">
                     <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">4</div>
-                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">ACP Mandate</div>
+                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">📜 ACP Mandates</div>
                 </div>
 
-                <div id="dash-step-5" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                <div id="dash-step-5" onclick="toggleDashStageDetails(5)" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s; cursor: pointer;">
                     <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">5</div>
-                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">AP2 & X-402</div>
+                    <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">💳 AP2 & X-402</div>
                 </div>
 
-                <div id="dash-step-6" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                <div id="dash-step-6" onclick="toggleDashStageDetails(6)" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s; cursor: pointer;">
                     <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">6</div>
                     <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Razorpay</div>
                 </div>
 
-                <div id="dash-step-7" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s;">
+                <div id="dash-step-7" onclick="toggleDashStageDetails(7)" class="dash-step-item" style="background: rgba(255,255,255,0.03); border: 1px solid #334155; border-radius: 8px; padding: 8px 6px; text-align: center; transition: all 0.3s; cursor: pointer;">
                     <div class="dash-step-circle" style="width: 22px; height: 22px; border-radius: 50%; background: #1e293b; border: 1.5px solid #475569; color: #94a3b8; font-size: 0.65rem; font-weight: 700; margin: 0 auto 4px; display: flex; align-items: center; justify-content: center;">7</div>
                     <div style="font-size: 0.68rem; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Confirmed</div>
                 </div>
+            </div>
+
+            <!-- Interactive Stage Mandate Drawer -->
+            <div id="dashStageDrawer" style="display: none; margin-top: 10px; background: #0f172a; border: 1px solid #3b82f6; border-radius: 8px; padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 8px; margin-bottom: 8px;">
+                    <div id="dashDrawerTitle" style="font-size: 0.82rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                        📜 Stage Details
+                    </div>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        <div id="dashDrawerTabs" style="display: flex; gap: 6px;"></div>
+                        <button onclick="document.getElementById('dashStageDrawer').style.display='none'" style="background: rgba(255,255,255,0.1); border: none; color: #94a3b8; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 0.75rem;">✕ Close</button>
+                    </div>
+                </div>
+                <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; display: flex; justify-content: space-between;">
+                    <span id="dashDrawerTypeLabel" style="font-weight: 600;">Type: Mandate Payload</span>
+                    <span id="dashDrawerFileRef" style="font-family: monospace; color: #60a5fa; font-size: 0.7rem;">Awaiting current query execution</span>
+                </div>
+                <pre id="dashDrawerPre" style="margin: 0; background: #020617; border: 1px solid #1e293b; border-radius: 6px; padding: 8px 10px; font-family: monospace; font-size: 0.72rem; color: #e2e8f0; max-height: 220px; overflow-y: auto; white-space: pre-wrap;"></pre>
             </div>
         </div>
 
@@ -988,12 +1006,24 @@ app.get('/', (req, res) => {
             };
         }
 
+        let liveStagePayloads = {};
+
         // ── Real-time Tracer DOM Synchronization ──
         function updateDashboardTracer(stageNum, status, data, errorReason) {
             const stepEl = document.getElementById('dash-step-' + stageNum);
             const statusBadge = document.getElementById('dashTracerStatus');
             if (!stepEl) return;
             const circle = stepEl.querySelector('.dash-step-circle');
+
+            if (data) {
+                liveStagePayloads[stageNum] = data;
+                const drawer = document.getElementById('dashStageDrawer');
+                if (drawer && drawer.style.display === 'block' && drawer.dataset.currentStage === String(stageNum)) {
+                    if (stageNum === 4) switchDashDrawerTab(4, 'customer');
+                    else if (stageNum === 5) switchDashDrawerTab(5, 'payment');
+                    else toggleDashStageDetails(stageNum);
+                }
+            }
 
             if (status === 'completed') {
                 stepEl.style.background = 'rgba(16, 185, 129, 0.12)';
@@ -1039,6 +1069,10 @@ app.get('/', (req, res) => {
         }
 
         function resetDashboardTracer() {
+            liveStagePayloads = {};
+            const drawer = document.getElementById('dashStageDrawer');
+            if (drawer) drawer.style.display = 'none';
+
             for (let i = 1; i <= 7; i++) {
                 const stepEl = document.getElementById('dash-step-' + i);
                 if (stepEl) {
@@ -1061,6 +1095,157 @@ app.get('/', (req, res) => {
             }
         }
 
+        // ── Stage Inspector Drawer Controller ──
+        function toggleDashStageDetails(stageNum) {
+            const drawer = document.getElementById('dashStageDrawer');
+            const title = document.getElementById('dashDrawerTitle');
+            const tabs = document.getElementById('dashDrawerTabs');
+            const typeLabel = document.getElementById('dashDrawerTypeLabel');
+            const fileRef = document.getElementById('dashDrawerFileRef');
+            const pre = document.getElementById('dashDrawerPre');
+
+            if (!drawer || !pre) return;
+
+            if (drawer.style.display === 'block' && drawer.dataset.currentStage === String(stageNum)) {
+                drawer.style.display = 'none';
+                return;
+            }
+
+            drawer.dataset.currentStage = String(stageNum);
+            drawer.style.display = 'block';
+
+            if (stageNum === 4) {
+                title.innerHTML = '📜 Stage 4: ACP Protocol Mandates Inspector (Customer &amp; Merchant)';
+                tabs.innerHTML = 
+                    '<button id="dashTabCust" onclick="switchDashDrawerTab(4, \'customer\')" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">👤 Customer Intent</button>' +
+                    '<button id="dashTabMerch" onclick="switchDashDrawerTab(4, \'merchant\')" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#334155; color:#cbd5e1; cursor:pointer; font-weight:600;">🏪 Merchant Cart</button>';
+                switchDashDrawerTab(4, 'customer');
+            } else if (stageNum === 5) {
+                title.innerHTML = '💳 Stage 5: AP2 Mandate &amp; X-402 Challenge Inspector';
+                tabs.innerHTML = 
+                    '<button id="dashTabPay" onclick="switchDashDrawerTab(5, \'payment\')" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">💳 AP2 Payment Mandate</button>' +
+                    '<button id="dashTabX402" onclick="switchDashDrawerTab(5, \'x402\')" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#334155; color:#cbd5e1; cursor:pointer; font-weight:600;">🛡️ X-402 Challenge</button>';
+                switchDashDrawerTab(5, 'payment');
+            } else {
+                tabs.innerHTML = '';
+                title.innerHTML = '🔍 Stage ' + stageNum + ' Details';
+                typeLabel.innerText = 'Stage ' + stageNum + ' Execution State';
+                fileRef.innerText = 'Live Trace Payload';
+                pre.innerText = JSON.stringify(liveStagePayloads[stageNum] || { stage: stageNum, status: 'Awaiting execution for current query' }, null, 2);
+            }
+        }
+
+        function switchDashDrawerTab(stageNum, tab) {
+            const typeLabel = document.getElementById('dashDrawerTypeLabel');
+            const fileRef = document.getElementById('dashDrawerFileRef');
+            const pre = document.getElementById('dashDrawerPre');
+
+            if (stageNum === 4) {
+                const btnCust = document.getElementById('dashTabCust');
+                const btnMerch = document.getElementById('dashTabMerch');
+
+                if (tab === 'customer') {
+                    if (btnCust) { btnCust.style.background = '#2563eb'; btnCust.style.color = '#fff'; }
+                    if (btnMerch) { btnMerch.style.background = '#334155'; btnMerch.style.color = '#cbd5e1'; }
+                    typeLabel.innerText = 'Type: Intent Mandate (Customer Authorization)';
+
+                    const liveCust = liveStagePayloads[4] ? liveStagePayloads[4].customerIntentMandate : null;
+                    if (liveCust) {
+                        fileRef.innerText = 'intent_' + liveCust.id + '.json (Live Generated)';
+                        pre.innerText = JSON.stringify(liveCust, null, 2);
+                    } else {
+                        fileRef.innerText = 'Awaiting current execution';
+                        pre.innerText = JSON.stringify({
+                            status: "Awaiting execution for current query",
+                            type: "intent_mandate",
+                            note: "Execute a purchase query on localhost:6003 to generate active customer intent mandate."
+                        }, null, 2);
+                    }
+                } else {
+                    if (btnCust) { btnCust.style.background = '#334155'; btnCust.style.color = '#cbd5e1'; }
+                    if (btnMerch) { btnMerch.style.background = '#059669'; btnMerch.style.color = '#fff'; }
+                    typeLabel.innerText = 'Type: Cart Mandate (Merchant Price Lock)';
+
+                    const liveMerch = liveStagePayloads[4] ? liveStagePayloads[4].merchantCartMandate : null;
+                    if (liveMerch) {
+                        fileRef.innerText = 'cart_' + liveMerch.id + '.json (Live Generated)';
+                        pre.innerText = JSON.stringify(liveMerch, null, 2);
+                    } else {
+                        fileRef.innerText = 'Awaiting current execution';
+                        pre.innerText = JSON.stringify({
+                            status: "Awaiting execution for current query",
+                            type: "cart_mandate",
+                            note: "Execute a purchase query on localhost:6003 to generate active merchant cart mandate."
+                        }, null, 2);
+                    }
+                }
+            } else if (stageNum === 5) {
+                const btnPay = document.getElementById('dashTabPay');
+                const btnX402 = document.getElementById('dashTabX402');
+
+                if (tab === 'payment') {
+                    if (btnPay) { btnPay.style.background = '#2563eb'; btnPay.style.color = '#fff'; }
+                    if (btnX402) { btnX402.style.background = '#334155'; btnX402.style.color = '#cbd5e1'; }
+                    typeLabel.innerText = 'Type: Payment Mandate (AP2 Chained Token)';
+
+                    const livePay = liveStagePayloads[5] ? liveStagePayloads[5].ap2PaymentMandate : null;
+                    if (livePay) {
+                        fileRef.innerText = 'payment_' + livePay.id + '.json (Live Generated)';
+                        pre.innerText = JSON.stringify(livePay, null, 2);
+                    } else {
+                        fileRef.innerText = 'Awaiting current execution';
+                        pre.innerText = JSON.stringify({
+                            status: "Awaiting execution for current query",
+                            type: "payment_mandate",
+                            note: "AP2 Payment Mandate will be chained after cart authorization."
+                        }, null, 2);
+                    }
+                } else {
+                    if (btnPay) { btnPay.style.background = '#334155'; btnPay.style.color = '#cbd5e1'; }
+                    if (btnX402) { btnX402.style.background = '#d97706'; btnX402.style.color = '#fff'; }
+                    typeLabel.innerText = 'Gateway Response: HTTP 402 Payment Required';
+                    fileRef.innerText = 'X-402 Gateway Port 6004';
+
+                    const liveX402 = liveStagePayloads[5] ? liveStagePayloads[5].x402Challenge : null;
+                    if (liveX402) {
+                        pre.innerText = JSON.stringify(liveX402, null, 2);
+                    } else {
+                        pre.innerText = JSON.stringify({
+                            status: "Awaiting execution for current query",
+                            http_status: 402,
+                            gateway: "http://localhost:6004/checkout"
+                        }, null, 2);
+                    }
+                }
+            }
+        }
+
+        async function viewMandateFile(filename) {
+            try {
+                const res = await fetch('/api/mandates/file/' + encodeURIComponent(filename));
+                const json = await res.json();
+                if (json.success) {
+                    const drawer = document.getElementById('dashStageDrawer');
+                    const title = document.getElementById('dashDrawerTitle');
+                    const tabs = document.getElementById('dashDrawerTabs');
+                    const typeLabel = document.getElementById('dashDrawerTypeLabel');
+                    const fileRef = document.getElementById('dashDrawerFileRef');
+                    const pre = document.getElementById('dashDrawerPre');
+
+                    drawer.style.display = 'block';
+                    drawer.dataset.currentStage = 'db';
+                    tabs.innerHTML = '';
+                    title.innerHTML = '📁 Stored Mandate: ' + filename;
+                    typeLabel.innerText = 'Type: ' + (json.data.type || 'Mandate');
+                    fileRef.innerText = 'MANDATES_DATABASE/' + filename;
+                    pre.innerText = JSON.stringify(json.data, null, 2);
+                    drawer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } catch(e) {
+                console.error('Failed to load mandate file:', e);
+            }
+        }
+
         // Connect persistent tracer SSE stream
         try {
             const globalTraceEs = new EventSource('/api/tracing/stream');
@@ -1078,20 +1263,31 @@ app.get('/', (req, res) => {
             try {
                 const res = await fetch('/api/list-tabs', { method: 'POST' });
                 const data = await res.json();
-                tabsListContainer.innerHTML = '';
+                const container = document.getElementById('tabsListContainer');
+                if (!container) return;
+                container.innerHTML = '';
 
                 if (data.success && Array.isArray(data.tabs) && data.tabs.length > 0) {
                     data.tabs.forEach(t => {
                         const div = document.createElement('div');
                         div.className = 'tab-item ' + (t.isActive ? 'active' : '');
                         div.style.cursor = 'pointer';
+                        div.style.background = t.isActive ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)';
+                        div.style.border = t.isActive ? '1.5px solid #6366f1' : '1px solid #334155';
+                        div.style.borderRadius = '8px';
+                        div.style.padding = '8px 12px';
+                        div.style.marginBottom = '6px';
+                        div.style.transition = 'all 0.2s';
                         div.title = 'Click to focus this tab in the headed browser';
                         div.innerHTML = 
                             '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-                                '<div class="tab-title" style="font-weight:600; color:#f8fafc;">' + (t.title || 'Browser Tab') + '</div>' +
-                                (t.isActive ? '<span style="font-size:0.65rem; background:#065f46; color:#34d399; padding:2px 6px; border-radius:4px; font-weight:700;">ACTIVE</span>' : '') +
+                                '<div class="tab-title" style="font-weight:700; color:#f8fafc; font-size:0.82rem; display:flex; align-items:center; gap:6px;">' +
+                                    '<span>🌐</span>' +
+                                    '<span>' + (t.title && t.title !== 'Untitled' ? t.title : 'Playwright Store Tab') + '</span>' +
+                                '</div>' +
+                                (t.isActive ? '<span style="font-size:0.65rem; background:#065f46; color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800; border:1px solid #059669;">ACTIVE</span>' : '<span style="font-size:0.65rem; color:#94a3b8; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">Tab ' + t.index + '</span>') +
                             '</div>' +
-                            '<div class="tab-url" style="font-size:0.72rem; color:#94a3b8; font-family:monospace; margin-top:2px;">' + (t.url || '') + '</div>';
+                            '<div class="tab-url" style="font-size:0.72rem; color:#818cf8; font-family:monospace; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (t.url || 'about:blank') + '</div>';
                         div.onclick = async () => {
                             await fetch('/api/switch-tab', {
                                 method: 'POST',
@@ -1100,17 +1296,22 @@ app.get('/', (req, res) => {
                             });
                             loadActiveTabs();
                         };
-                        tabsListContainer.appendChild(div);
+                        container.appendChild(div);
                     });
                 } else {
-                    tabsListContainer.innerHTML = 
-                        '<div style="color:#6b7280; font-size:0.75rem; text-align:center; padding:10px;">' +
-                            'No tabs detected. ' +
-                            '<button onclick="openStoreInBrowser()" style="margin-top:6px; background:#4f46e5; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-size:0.72rem; cursor:pointer;">Open Store (5173)</button>' +
+                    container.innerHTML = 
+                        '<div style="color:#94a3b8; font-size:0.75rem; text-align:center; padding:12px; background:rgba(255,255,255,0.02); border-radius:8px; border:1px dashed #334155;">' +
+                            '<div>No browser tabs detected on Port 5000.</div>' +
+                            '<button onclick="openStoreInBrowser()" style="margin-top:8px; background:#4f46e5; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; box-shadow:0 2px 8px rgba(79,70,229,0.3);">' +
+                                '🌐 Launch Store (http://localhost:5173)' +
+                            '</button>' +
                         '</div>';
                 }
             } catch (err) {
-                tabsListContainer.innerHTML = '<div style="color:#ef4444; font-size:0.75rem; text-align:center; padding:10px;">Connecting to browser on Port 5000...</div>';
+                const container = document.getElementById('tabsListContainer');
+                if (container) {
+                    container.innerHTML = '<div style="color:#ef4444; font-size:0.75rem; text-align:center; padding:10px;">Connecting to browser on Port 5000...</div>';
+                }
             }
         }
 
@@ -1143,6 +1344,8 @@ app.get('/', (req, res) => {
                     list.forEach(m => {
                         const div = document.createElement('div');
                         div.className = 'mandate-item';
+                        div.style.cursor = 'pointer';
+                        div.title = 'Click to inspect ' + m.filename;
                         const typeLower = (m.type || '').toLowerCase();
                         const badgeClass = typeLower.includes('payment') ? 'payment' : (typeLower.includes('intent') ? 'intent' : 'cart');
                         div.innerHTML = 
@@ -1151,7 +1354,11 @@ app.get('/', (req, res) => {
                                 '<span style="font-size:0.75rem; color:#34d399; font-weight:700;">₹' + (m.amount || '') + ' ' + (m.currency || '') + '</span>' +
                             '</div>' +
                             '<div style="font-size:0.8rem; font-weight:600; color:#ffffff; margin-top:2px;">' + (m.item || 'General Product') + '</div>' +
-                            '<div style="font-size:0.68rem; color:#9ca3af; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (m.filename || '') + '</div>';
+                            '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">' +
+                                '<span style="font-size:0.68rem; color:#9ca3af; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:260px;">' + (m.filename || '') + '</span>' +
+                                '<span style="font-size:0.65rem; color:#60a5fa; font-weight:600;">🔍 View</span>' +
+                            '</div>';
+                        div.onclick = () => viewMandateFile(m.filename);
                         mandatesListContainer.appendChild(div);
                     });
                 } else {
@@ -1448,6 +1655,94 @@ app.get('/api/mandates', (req, res) => {
     res.json(list);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Endpoint: Get Stored Mandate Threads (Customer Intent + Merchant Cart + AP2 Payment)
+app.get('/api/mandates/threads', (req, res) => {
+  try {
+    const dbDir = path.join(__dirname, '..', 'MANDATE(AP2)', 'MANDATES_DATABASE');
+    if (!fs.existsSync(dbDir)) {
+      return res.json({ success: true, count: 0, threads: [], latest: null });
+    }
+
+    const files = fs.readdirSync(dbDir).filter(f => f.endsWith('.json') && f !== 'index.json' && f !== 'user_keys.json');
+    const intentList = [];
+    const cartList = [];
+    const paymentList = [];
+
+    for (const file of files) {
+      try {
+        const filePath = path.join(dbDir, file);
+        const content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        const stat = fs.statSync(filePath);
+        const item = {
+          meta: {
+            filename: file,
+            mtime: stat.mtime,
+            size: stat.size
+          },
+          content
+        };
+
+        if (file.startsWith('intent_') || content.type === 'intent' || (Array.isArray(content.type) && content.type.includes('IntentMandate'))) {
+          intentList.push(item);
+        } else if (file.startsWith('cart_') || content.type === 'cart' || (Array.isArray(content.type) && content.type.includes('CartMandate'))) {
+          cartList.push(item);
+        } else if (file.startsWith('payment_') || content.type === 'payment' || (Array.isArray(content.type) && content.type.includes('PaymentMandate'))) {
+          paymentList.push(item);
+        }
+      } catch (_) {}
+    }
+
+    // Sort by mtime descending
+    intentList.sort((a, b) => new Date(b.meta.mtime) - new Date(a.meta.mtime));
+    cartList.sort((a, b) => new Date(b.meta.mtime) - new Date(a.meta.mtime));
+    paymentList.sort((a, b) => new Date(b.meta.mtime) - new Date(a.meta.mtime));
+
+    const threads = [];
+    for (const intent of intentList) {
+      const intentId = intent.content.id;
+      const matchingCart = cartList.find(c => c.content.parent_id === intentId) || null;
+      let matchingPayment = null;
+      if (matchingCart && matchingCart.content.id) {
+        matchingPayment = paymentList.find(p => p.content.parent_cart_id === matchingCart.content.id) || null;
+      }
+
+      threads.push({
+        threadId: intentId || intent.meta.filename,
+        timestamp: intent.meta.mtime,
+        customerIntentMandate: intent,
+        merchantCartMandate: matchingCart,
+        ap2PaymentMandate: matchingPayment
+      });
+    }
+
+    const latest = {
+      customerIntentMandate: intentList[0] || null,
+      merchantCartMandate: cartList[0] || null,
+      ap2PaymentMandate: paymentList[0] || null
+    };
+
+    res.json({ success: true, count: threads.length, threads, latest });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Endpoint: Fetch Specific Mandate JSON from MANDATES_DATABASE
+app.get('/api/mandates/file/:filename', (req, res) => {
+  try {
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(__dirname, '..', 'MANDATE(AP2)', 'MANDATES_DATABASE', filename);
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      res.json({ success: true, filename, data });
+    } else {
+      res.status(404).json({ success: false, error: 'File not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
