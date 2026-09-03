@@ -1,16 +1,36 @@
-# React + Vite
+# 🏪 Razorpay ACP Merchant Storefront (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+<div align="center">
 
-Currently, two official plugins are available:
+[![Live Application](https://img.shields.io/badge/🚀_LIVE_PRODUCTION_DEMO-razor--pay--submission.vercel.app-10b981?style=for-the-badge&logo=vercel&logoColor=white)](https://razor-pay-submission.vercel.app/)
+[![AP2 Tracing](https://img.shields.io/badge/🔍_AP2_TRACING-Live_Inspector-6366f1?style=for-the-badge&logo=google-cloud&logoColor=white)](https://razor-pay-submission.vercel.app/tracing)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### 🌐 **[👉 CLICK HERE TO OPEN LIVE STORE & DASHBOARD 👈](https://razor-pay-submission.vercel.app/)**
+**⚡ Production App:** [https://razor-pay-submission.vercel.app/](https://razor-pay-submission.vercel.app/)
 
-## React Compiler
+</div>
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 📐 Autonomous Protocol Execution Flowchart
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+<div align="center">
+  <img src="assets/agentic_commerce_flow.png" alt="Razorpay Agentic Commerce 8-Step Architecture Flowchart" width="620px" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); border: 1px solid #334155; margin: 16px 0;" />
+</div>
+
+---
+
+## 🛍️ Overview
+This storefront represents the **Merchant Layer** in the Razorpay Agentic Commerce Protocol (ACP) ecosystem:
+* **Structured Catalog Feed**: Exposes machine-readable products (Air Jordan, Chunky Sneakers, Retro Green Sneakers, Trail Runners).
+* **Agentic Cart Building**: Interacts with autonomous agents via ACP endpoints and MCP tool discovery.
+* **AP2 & X-402 Compatibility**: Integrates seamlessly with Razorpay payment challenge rails.
+
+---
+
+## 🚀 Running Locally
+```bash
+npm install
+npm run dev
+```
+Runs at `http://localhost:5173/`.
