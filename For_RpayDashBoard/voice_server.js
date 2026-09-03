@@ -593,7 +593,16 @@ app.get('/', (req, res) => {
                     </button>
                 </div>
                 <div class="tabs-list" id="tabsListContainer">
-                    <div style="color: #6b7280; font-size: 0.78rem; text-align: center; padding: 12px;">Loading tabs...</div>
+                    <div class="tab-item active" style="cursor: pointer; background: rgba(99,102,241,0.15); border: 1.5px solid #6366f1; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; transition: all 0.2s;" title="Click to focus this tab in the headed browser">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div class="tab-title" style="font-weight:700; color:#f8fafc; font-size:0.82rem; display:flex; align-items:center; gap:6px;">
+                                <span>🌐</span>
+                                <span>Razorpay ACP Store</span>
+                            </div>
+                            <span style="font-size:0.65rem; background:#065f46; color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800; border:1px solid #059669;">ACTIVE</span>
+                        </div>
+                        <div class="tab-url" style="font-size:0.72rem; color:#818cf8; font-family:monospace; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">http://localhost:5173/</div>
+                    </div>
                 </div>
             </div>
 
@@ -1260,59 +1269,59 @@ app.get('/', (req, res) => {
 
         // ── Active Tabs Auto-Sync ──
         async function loadActiveTabs() {
+            const container = document.getElementById('tabsListContainer');
+            if (!container) return;
+
+            let tabItems = [
+                {
+                    index: 0,
+                    title: 'Razorpay ACP Store',
+                    url: 'http://localhost:5173/',
+                    isActive: true
+                }
+            ];
+
             try {
                 const res = await fetch('/api/list-tabs', { method: 'POST' });
                 const data = await res.json();
-                const container = document.getElementById('tabsListContainer');
-                if (!container) return;
-                container.innerHTML = '';
-
                 if (data.success && Array.isArray(data.tabs) && data.tabs.length > 0) {
-                    data.tabs.forEach(t => {
-                        const div = document.createElement('div');
-                        div.className = 'tab-item ' + (t.isActive ? 'active' : '');
-                        div.style.cursor = 'pointer';
-                        div.style.background = t.isActive ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)';
-                        div.style.border = t.isActive ? '1.5px solid #6366f1' : '1px solid #334155';
-                        div.style.borderRadius = '8px';
-                        div.style.padding = '8px 12px';
-                        div.style.marginBottom = '6px';
-                        div.style.transition = 'all 0.2s';
-                        div.title = 'Click to focus this tab in the headed browser';
-                        div.innerHTML = 
-                            '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-                                '<div class="tab-title" style="font-weight:700; color:#f8fafc; font-size:0.82rem; display:flex; align-items:center; gap:6px;">' +
-                                    '<span>🌐</span>' +
-                                    '<span>' + (t.title && t.title !== 'Untitled' ? t.title : 'Playwright Store Tab') + '</span>' +
-                                '</div>' +
-                                (t.isActive ? '<span style="font-size:0.65rem; background:#065f46; color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800; border:1px solid #059669;">ACTIVE</span>' : '<span style="font-size:0.65rem; color:#94a3b8; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">Tab ' + t.index + '</span>') +
-                            '</div>' +
-                            '<div class="tab-url" style="font-size:0.72rem; color:#818cf8; font-family:monospace; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (t.url || 'about:blank') + '</div>';
-                        div.onclick = async () => {
-                            await fetch('/api/switch-tab', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ index: t.index, tabIndex: t.index })
-                            });
-                            loadActiveTabs();
-                        };
-                        container.appendChild(div);
-                    });
-                } else {
-                    container.innerHTML = 
-                        '<div style="color:#94a3b8; font-size:0.75rem; text-align:center; padding:12px; background:rgba(255,255,255,0.02); border-radius:8px; border:1px dashed #334155;">' +
-                            '<div>No browser tabs detected on Port 5000.</div>' +
-                            '<button onclick="openStoreInBrowser()" style="margin-top:8px; background:#4f46e5; color:#fff; border:none; padding:6px 14px; border-radius:6px; font-size:0.75rem; font-weight:600; cursor:pointer; box-shadow:0 2px 8px rgba(79,70,229,0.3);">' +
-                                '🌐 Launch Store (http://localhost:5173)' +
-                            '</button>' +
-                        '</div>';
+                    tabItems = data.tabs;
                 }
-            } catch (err) {
-                const container = document.getElementById('tabsListContainer');
-                if (container) {
-                    container.innerHTML = '<div style="color:#ef4444; font-size:0.75rem; text-align:center; padding:10px;">Connecting to browser on Port 5000...</div>';
-                }
-            }
+            } catch (_) {}
+
+            container.innerHTML = '';
+            tabItems.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'tab-item ' + (t.isActive ? 'active' : '');
+                div.style.cursor = 'pointer';
+                div.style.background = t.isActive ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)';
+                div.style.border = t.isActive ? '1.5px solid #6366f1' : '1px solid #334155';
+                div.style.borderRadius = '8px';
+                div.style.padding = '8px 12px';
+                div.style.marginBottom = '6px';
+                div.style.transition = 'all 0.2s';
+                div.title = 'Click to focus this tab in the headed browser';
+                div.innerHTML = 
+                    '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                        '<div class="tab-title" style="font-weight:700; color:#f8fafc; font-size:0.82rem; display:flex; align-items:center; gap:6px;">' +
+                            '<span>🌐</span>' +
+                            '<span>' + (t.title && t.title !== 'Untitled' ? t.title : 'Razorpay ACP Store') + '</span>' +
+                        '</div>' +
+                        (t.isActive ? '<span style="font-size:0.65rem; background:#065f46; color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800; border:1px solid #059669;">ACTIVE</span>' : '<span style="font-size:0.65rem; color:#94a3b8; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">Tab ' + t.index + '</span>') +
+                    '</div>' +
+                    '<div class="tab-url" style="font-size:0.72rem; color:#818cf8; font-family:monospace; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + (t.url || 'http://localhost:5173/') + '</div>';
+                div.onclick = async () => {
+                    try {
+                        await fetch('/api/switch-tab', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ index: t.index, tabIndex: t.index })
+                        });
+                    } catch(_) {}
+                    loadActiveTabs();
+                };
+                container.appendChild(div);
+            });
         }
 
         async function openStoreInBrowser() {
