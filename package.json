@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Razorpay AP2 / X-402 Agentic Payment Gateway & Voice Automation Ecosystem",
   "scripts": {
+    "build": "cd my-react-app && npm install && npm run build",
     "start:frontend": "cd my-react-app && npm run dev",
     "start:gateway": "node X402_GateWay/checkout_server.js",
     "start:voice": "node For_RpayDashBoard/voice_server.js",
