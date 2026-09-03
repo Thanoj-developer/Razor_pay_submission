@@ -1663,23 +1663,56 @@ app.get('/', (req, res) => {
                 card.onmouseleave = () => { card.style.borderColor = '#334155'; card.style.transform = 'none'; };
 
                 const isOut = item.stock === 0;
-                card.innerHTML = 
-                    '<div style="position:relative; width:100%; height:130px; background:#0f172a; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">' +
-                        '<img src="' + item.image + '" alt="' + item.name + '" style="max-height:110px; max-width:90%; object-fit:contain;" onerror="this.src=\'http://localhost:5173' + item.image + '\'">' +
-                        '<span style="position:absolute; top:6px; right:6px; font-size:0.65rem; background:rgba(0,0,0,0.75); color:' + (isOut ? '#f87171' : '#34d399') + '; padding:2px 7px; border-radius:4px; font-weight:700; border:1px solid ' + (isOut ? '#ef4444' : '#10b981') + ';">' + (isOut ? 'Out of Stock' : item.badge) + '</span>' +
-                    '</div>' +
-                    '<div>' +
-                        '<div style="font-size:0.68rem; color:#94a3b8; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">' + item.category + '</div>' +
-                        '<div style="font-size:0.86rem; font-weight:700; color:#f8fafc; margin:2px 0 4px 0; line-height:1.25;">' + item.name + '</div>' +
-                        '<div style="font-size:0.72rem; color:#cbd5e1; margin-bottom:10px; line-height:1.35;">' + item.desc + '</div>' +
-                    '</div>' +
-                    '<div style="margin-top:auto; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">' +
-                        '<div style="font-size:0.95rem; font-weight:800; color:#34d399;">₹' + item.price.toLocaleString() + '</div>' +
-                        (isOut ? 
-                            '<button disabled style="background:#334155; color:#94a3b8; border:none; padding:6px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:not-allowed;">Sold Out</button>' : 
-                            '<button onclick="orderFromMerchantCatalog(' + item.price + ', \'' + item.name.replace(/'/g, "\\'") + '\')" style="background:linear-gradient(135deg, #059669, #10b981); color:#ffffff; border:none; padding:6px 12px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(16,185,129,0.35);">🤖 Buy with Agent</button>'
-                        ) +
-                    '</div>';
+
+                const imgContainer = document.createElement('div');
+                imgContainer.style.cssText = 'position:relative; width:100%; height:130px; background:#0f172a; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:10px;';
+
+                const img = document.createElement('img');
+                img.src = item.image;
+                img.alt = item.name;
+                img.style.cssText = 'max-height:110px; max-width:90%; object-fit:contain;';
+                img.onerror = () => { img.src = 'http://localhost:5173' + item.image; };
+
+                const badge = document.createElement('span');
+                badge.style.cssText = 'position:absolute; top:6px; right:6px; font-size:0.65rem; background:rgba(0,0,0,0.75); color:' + (isOut ? '#f87171' : '#34d399') + '; padding:2px 7px; border-radius:4px; font-weight:700; border:1px solid ' + (isOut ? '#ef4444' : '#10b981') + ';';
+                badge.textContent = isOut ? 'Out of Stock' : item.badge;
+
+                imgContainer.appendChild(img);
+                imgContainer.appendChild(badge);
+
+                const infoContainer = document.createElement('div');
+                infoContainer.innerHTML = 
+                    '<div style="font-size:0.68rem; color:#94a3b8; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">' + item.category + '</div>' +
+                    '<div style="font-size:0.86rem; font-weight:700; color:#f8fafc; margin:2px 0 4px 0; line-height:1.25;">' + item.name + '</div>' +
+                    '<div style="font-size:0.72rem; color:#cbd5e1; margin-bottom:10px; line-height:1.35;">' + item.desc + '</div>';
+
+                const bottomRow = document.createElement('div');
+                bottomRow.style.cssText = 'margin-top:auto; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;';
+
+                const priceEl = document.createElement('div');
+                priceEl.style.cssText = 'font-size:0.95rem; font-weight:800; color:#34d399;';
+                priceEl.textContent = '₹' + item.price.toLocaleString();
+
+                bottomRow.appendChild(priceEl);
+
+                if (isOut) {
+                    const btn = document.createElement('button');
+                    btn.disabled = true;
+                    btn.style.cssText = 'background:#334155; color:#94a3b8; border:none; padding:6px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:not-allowed;';
+                    btn.textContent = 'Sold Out';
+                    bottomRow.appendChild(btn);
+                } else {
+                    const btn = document.createElement('button');
+                    btn.style.cssText = 'background:linear-gradient(135deg, #059669, #10b981); color:#ffffff; border:none; padding:6px 12px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(16,185,129,0.35);';
+                    btn.textContent = '🤖 Buy with Agent';
+                    btn.onclick = () => { orderFromMerchantCatalog(item.price, item.name); };
+                    bottomRow.appendChild(btn);
+                }
+
+                card.appendChild(imgContainer);
+                card.appendChild(infoContainer);
+                card.appendChild(bottomRow);
+
                 grid.appendChild(card);
             });
         }
