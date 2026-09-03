@@ -305,43 +305,61 @@ async function runAutoNavigationStep(query, hitlCallbacks = {}) {
             const data = await x402Res.json();
             x402Challenge = data.challenge;
           }
+        } catch (callErr) {
+          console.log(`[AutoNavigation X-402] Using unified in-process checkout handler fallback...`);
+          try {
+            const { handleCheckout } = require('../X402_GateWay/checkout_server');
+            const fakeReq = {
+              headers: {
+                'cart-mandate': Buffer.from(JSON.stringify(createdCartMandate)).toString('base64'),
+                'payment-mandate': Buffer.from(JSON.stringify(createdPaymentMandate)).toString('base64')
+              },
+              body: {}
+            };
+            let resHeaders = {};
+            let jsonBody = {};
+            const fakeRes = {
+              status: () => fakeRes,
+              setHeader: (k, v) => { resHeaders[k.toLowerCase()] = v; return fakeRes; },
+              json: (d) => { jsonBody = d; return fakeRes; }
+            };
+            await handleCheckout(fakeReq, fakeRes);
+            if (resHeaders['payment-required']) {
+              x402Challenge = JSON.parse(Buffer.from(resHeaders['payment-required'], 'base64').toString('utf8'));
+            } else {
+              x402Challenge = jsonBody.challenge;
+            }
+          } catch (inErr) {
+            console.error('[AutoNavigation X-402] In-process challenge error:', inErr.message);
+          }
+        }
 
-          if (hitlCallbacks.onTracingStep) {
-            hitlCallbacks.onTracingStep({
-              stage: 5,
-              status: 'completed',
-              data: {
-                ap2PaymentMandate: createdPaymentMandate,
-                x402Challenge: x402Challenge,
-                paymentMandateId: createdPaymentMandate.id,
-                httpStatus: 402,
-                orderRef: x402Challenge?.order_ref,
-                nonce: x402Challenge?.nonce,
-                razorpayOrderId: x402Challenge?.razorpay_order_id,
-                expiresAt: x402Challenge?.expires_at
-              }
-            });
-            hitlCallbacks.onTracingStep({ stage: 6, status: 'current' });
-          }
+        if (hitlCallbacks.onTracingStep) {
+          hitlCallbacks.onTracingStep({
+            stage: 5,
+            status: 'completed',
+            data: {
+              ap2PaymentMandate: createdPaymentMandate,
+              x402Challenge: x402Challenge,
+              paymentMandateId: createdPaymentMandate.id,
+              httpStatus: 402,
+              orderRef: x402Challenge?.order_ref,
+              nonce: x402Challenge?.nonce,
+              razorpayOrderId: x402Challenge?.razorpay_order_id,
+              expiresAt: x402Challenge?.expires_at
+            }
+          });
+          hitlCallbacks.onTracingStep({ stage: 6, status: 'current' });
+        }
 
-          if (hitlCallbacks.onX402Challenge) {
-            console.log(`[AutoNavigation X-402] Presenting HTTP 402 Challenge on localhost:6003:`, x402Challenge);
-            await hitlCallbacks.onX402Challenge({
-              challenge: x402Challenge,
-              cartMandate: createdCartMandate,
-              paymentMandate: createdPaymentMandate,
-              product: product
-            });
-          }
-        } catch (x402Err) {
-          console.warn('[AutoNavigation X-402] Gateway call error:', x402Err.message);
-          if (hitlCallbacks.onTracingStep) {
-            hitlCallbacks.onTracingStep({
-              stage: 5,
-              status: 'failed',
-              errorReason: `X-402 Gateway Error: ${x402Err.message}`
-            });
-          }
+        if (hitlCallbacks.onX402Challenge) {
+          console.log(`[AutoNavigation X-402] Presenting HTTP 402 Challenge on localhost:6003:`, x402Challenge);
+          await hitlCallbacks.onX402Challenge({
+            challenge: x402Challenge,
+            cartMandate: createdCartMandate,
+            paymentMandate: createdPaymentMandate,
+            product: product
+          });
         }
       } catch (mandateErr) {
         console.warn('[AutoNavigation AP2] Warning during mandate creation:', mandateErr.message);

@@ -2345,13 +2345,20 @@ app.post('/api/x402-settle', async (req, res) => {
 
     console.log(`[Smart Router] Settling X-402 Challenge for order: ${order_ref}...`);
 
-    // 1. Simulate user completing Razorpay payment and obtaining HMAC signature
-    const simRes = await fetch('http://localhost:6004/api/simulate-razorpay-payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ razorpay_order_id })
-    });
-    const paymentProof = await simRes.json();
+    let paymentProof;
+    try {
+      const simRes = await fetch('http://localhost:6004/api/simulate-razorpay-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ razorpay_order_id })
+      });
+      paymentProof = await simRes.json();
+    } catch (_) {
+      const pid = `pay_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+      const data = `${razorpay_order_id}|${pid}`;
+      const signature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'mZ7h9T1V1K4Y2o9W2j3K6L8P').update(data).digest('hex');
+      paymentProof = { razorpay_order_id, razorpay_payment_id: pid, razorpay_signature: signature };
+    }
 
     // 2. Submit Payment-Signature to finalize settlement on X-402 Gateway
     const paymentSigHeader = {
@@ -2361,17 +2368,40 @@ app.post('/api/x402-settle', async (req, res) => {
       razorpay_signature: paymentProof.razorpay_signature
     };
 
-    const settleRes = await fetch('http://localhost:6004/checkout', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cart-Mandate': Buffer.from(JSON.stringify(cartMandate)).toString('base64'),
-        'Payment-Mandate': Buffer.from(JSON.stringify(paymentMandate)).toString('base64'),
-        'Payment-Signature': Buffer.from(JSON.stringify(paymentSigHeader)).toString('base64')
-      }
-    });
-
-    const receipt = await settleRes.json();
+    let settleRes;
+    let receipt;
+    try {
+      settleRes = await fetch('http://localhost:6004/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cart-Mandate': Buffer.from(JSON.stringify(cartMandate)).toString('base64'),
+          'Payment-Mandate': Buffer.from(JSON.stringify(paymentMandate)).toString('base64'),
+          'Payment-Signature': Buffer.from(JSON.stringify(paymentSigHeader)).toString('base64')
+        }
+      });
+      receipt = await settleRes.json();
+    } catch (_) {
+      const { handleCheckout } = require('../X402_GateWay/checkout_server');
+      const fakeReq = {
+        headers: {
+          'cart-mandate': Buffer.from(JSON.stringify(cartMandate)).toString('base64'),
+          'payment-mandate': Buffer.from(JSON.stringify(paymentMandate)).toString('base64'),
+          'payment-signature': Buffer.from(JSON.stringify(paymentSigHeader)).toString('base64')
+        },
+        body: {}
+      };
+      let status = 200;
+      let jsonBody = {};
+      const fakeRes = {
+        status: (s) => { status = s; return fakeRes; },
+        setHeader: () => fakeRes,
+        json: (d) => { jsonBody = d; return fakeRes; }
+      };
+      await handleCheckout(fakeReq, fakeRes);
+      settleRes = { status };
+      receipt = jsonBody;
+    }
     console.log(`[Smart Router] Settlement completed! Gateway Status: ${settleRes.status}`);
 
     if (settleRes.status === 200 && receipt.success) {
@@ -2445,17 +2475,40 @@ app.post('/api/x402-settle-signature', async (req, res) => {
       razorpay_signature: razorpay_signature
     };
 
-    const settleRes = await fetch('http://localhost:6004/checkout', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cart-Mandate': Buffer.from(JSON.stringify(cartMandate)).toString('base64'),
-        'Payment-Mandate': Buffer.from(JSON.stringify(paymentMandate)).toString('base64'),
-        'Payment-Signature': Buffer.from(JSON.stringify(paymentSigHeader)).toString('base64')
-      }
-    });
-
-    const receipt = await settleRes.json();
+    let settleRes;
+    let receipt;
+    try {
+      settleRes = await fetch('http://localhost:6004/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cart-Mandate': Buffer.from(JSON.stringify(cartMandate)).toString('base64'),
+          'Payment-Mandate': Buffer.from(JSON.stringify(paymentMandate)).toString('base64'),
+          'Payment-Signature': Buffer.from(JSON.stringify(paymentSigHeader)).toString('base64')
+        }
+      });
+      receipt = await settleRes.json();
+    } catch (_) {
+      const { handleCheckout } = require('../X402_GateWay/checkout_server');
+      const fakeReq = {
+        headers: {
+          'cart-mandate': Buffer.from(JSON.stringify(cartMandate)).toString('base64'),
+          'payment-mandate': Buffer.from(JSON.stringify(paymentMandate)).toString('base64'),
+          'payment-signature': Buffer.from(JSON.stringify(paymentSigHeader)).toString('base64')
+        },
+        body: {}
+      };
+      let status = 200;
+      let jsonBody = {};
+      const fakeRes = {
+        status: (s) => { status = s; return fakeRes; },
+        setHeader: () => fakeRes,
+        json: (d) => { jsonBody = d; return fakeRes; }
+      };
+      await handleCheckout(fakeReq, fakeRes);
+      settleRes = { status };
+      receipt = jsonBody;
+    }
     console.log(`[Smart Router] Live Razorpay Settlement Status: ${settleRes.status}`);
 
     if (settleRes.status === 200 && receipt.success) {
@@ -2512,6 +2565,17 @@ app.post('/api/x402-settle-signature', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Smart Query Router Dashboard running at http://localhost:${PORT}`);
-});
+// Direct Gateway routes mounted on voice_server
+try {
+  const { handleCheckout } = require('../X402_GateWay/checkout_server');
+  app.post('/checkout', handleCheckout);
+  app.post('/api/checkout', handleCheckout);
+} catch (_) {}
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Smart Query Router Dashboard running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

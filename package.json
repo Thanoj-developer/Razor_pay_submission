@@ -10,6 +10,10 @@
     "start:playwright": "node Playwright_Razorpay/server.js",
     "start": "start_all.bat"
   },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
   "keywords": ["razorpay", "ap2", "x402", "voice-agent", "agentic-payments"],
   "author": "",
   "license": "ISC"
