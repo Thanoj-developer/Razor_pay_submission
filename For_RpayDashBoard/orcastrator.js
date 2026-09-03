@@ -1,5 +1,5 @@
 // Using native global fetch
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:6001';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
 async function runOrchestrator(query) {
   console.log(`[Orchestrator Agent] Running backend API orchestration logic for query: "${query}" (Target: ${BACKEND_URL})`);

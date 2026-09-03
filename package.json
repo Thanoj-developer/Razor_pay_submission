@@ -1,0 +1,15 @@
+{
+  "name": "razorpay-ap2-fullstack",
+  "version": "1.0.0",
+  "description": "Razorpay AP2 / X-402 Agentic Payment Gateway & Voice Automation Ecosystem",
+  "scripts": {
+    "start:frontend": "cd my-react-app && npm run dev",
+    "start:gateway": "node X402_GateWay/checkout_server.js",
+    "start:voice": "node For_RpayDashBoard/voice_server.js",
+    "start:playwright": "node Playwright_Razorpay/server.js",
+    "start": "start_all.bat"
+  },
+  "keywords": ["razorpay", "ap2", "x402", "voice-agent", "agentic-payments"],
+  "author": "",
+  "license": "ISC"
+}

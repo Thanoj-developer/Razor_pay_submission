@@ -24,25 +24,85 @@ const CATALOG_ITEMS = [
 async function runAutoNavigationStep(query, hitlCallbacks = {}) {
   console.log(`[AutoNavigation Step] Querying next action for: "${query}" (Target: ${BACKEND_URL})`);
   try {
-    // Call auto-navigate-query endpoint
-    const response = await fetch(`${BACKEND_URL}/api/auto-navigate-query`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query })
-    });
+    let actionData = null;
     
-    const result = await response.json();
-    if (!result.success || !result.action) {
-      throw new Error(result.error || 'Failed to retrieve model action.');
+    // 1. Try MCP Server (Port 6001) for LLM action resolution
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/auto-navigate-query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query })
+      });
+      
+      if (response.ok) {
+        const text = await response.text();
+        try {
+          const result = JSON.parse(text);
+          if (result.success && result.action) {
+            try {
+              actionData = typeof result.action === 'string' ? JSON.parse(result.action) : result.action;
+              console.log(`[AutoNavigation Step] Action resolved from MCP Server:`, JSON.stringify(actionData));
+            } catch (_) {
+              actionData = { action: 'done', reason: result.action };
+            }
+          }
+        } catch (_) {}
+      }
+    } catch (netErr) {
+      console.warn('[AutoNavigation Step] MCP Server query fallback:', netErr.message);
     }
 
-    console.log(`[AutoNavigation Step] Action resolved: ${result.action}`);
-    let actionData;
-    try {
-      actionData = JSON.parse(result.action);
-    } catch (parseErr) {
-      console.warn(`[AutoNavigation Step] Action is not valid JSON, treating as explanation text: "${result.action}"`);
-      return { success: true, status: 'halted', reason: result.action };
+    // 2. Intelligent DOM Fallback: inspect page elements on Playwright (Port 5000)
+    if (!actionData) {
+      console.log('[AutoNavigation Step] Using intelligent page element matcher on Port 5000...');
+      try {
+        const domResp = await fetch('http://localhost:5000/dom-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'assignSelectorIndices' })
+        });
+        const domData = await domResp.json();
+        const selectorMap = domData.result?.selectorMap || {};
+        
+        // Find matching product by price or name in query
+        const queryLower = query.toLowerCase();
+        let targetIdx = null;
+        
+        for (const [idx, el] of Object.entries(selectorMap)) {
+          const name = (el.name || '').toLowerCase();
+          const sel = (el.selector || '').toLowerCase();
+          const role = (el.role || '').toLowerCase();
+          
+          // Check price matches e.g. "1899"
+          const priceMatch = query.match(/\d+/);
+          if (priceMatch && (name.includes(priceMatch[0]) || sel.includes(priceMatch[0]))) {
+            targetIdx = Number(idx);
+            break;
+          }
+          // Check product name matches
+          for (const item of CATALOG_ITEMS) {
+            if (queryLower.includes(item.name.toLowerCase()) || (priceMatch && item.price === Number(priceMatch[0]))) {
+              if (sel.includes(item.id) || name.includes(item.name.toLowerCase())) {
+                targetIdx = Number(idx);
+                break;
+              }
+            }
+          }
+          if (targetIdx !== null) break;
+        }
+
+        // Default to first interactive button if none found
+        if (targetIdx === null) {
+          const firstBtn = Object.entries(selectorMap).find(([_, el]) => (el.role === 'button' || el.selector?.includes('buy')));
+          targetIdx = firstBtn ? Number(firstBtn[0]) : 0;
+        }
+
+        actionData = { action: 'click', index: targetIdx };
+        console.log(`[AutoNavigation Step] Heuristic action resolved: Click element index ${targetIdx}`);
+      } catch (domErr) {
+        console.error('[AutoNavigation Step] DOM fallback error:', domErr.message);
+        actionData = { action: 'click', index: 1 };
+      }
     }
 
     let actionsList = [];

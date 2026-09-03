@@ -1,3 +1,9 @@
+const path = require('path');
+module.paths.push(
+  path.join(__dirname, '..', 'my-react-app', 'node_modules'),
+  path.join(__dirname, '..', 'Playwright_Razorpay', 'node_modules')
+);
+
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
@@ -224,7 +230,41 @@ async function handleCheckout(req, res) {
   }
 }
 
-// Register endpoints
+// Root route: Status dashboard & AP2 explorer
+app.get('/', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>X-402 AP2 Payment Gateway</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; padding: 40px; margin: 0; }
+    .card { background: #1e293b; border-radius: 12px; padding: 24px; max-width: 800px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.4); border: 1px solid #334155; }
+    h1 { color: #38bdf8; margin-top: 0; display: flex; align-items: center; gap: 10px; }
+    .status { background: #065f46; color: #34d399; padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; display: inline-block; }
+    .links a { display: inline-block; margin-right: 12px; margin-top: 10px; color: #38bdf8; text-decoration: none; padding: 8px 16px; background: #334155; border-radius: 6px; font-weight: 500; }
+    .links a:hover { background: #475569; }
+    pre { background: #0f172a; padding: 12px; border-radius: 6px; overflow-x: auto; color: #cbd5e1; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🛡️ X-402 AP2 Payment Gateway <span class="status">● Active</span></h1>
+    <p>Agentic Payment Protocol (AP2) verification and Razorpay challenge-settlement layer.</p>
+    <div class="links">
+      <a href="/api/orders" target="_blank">📋 View Orders JSON</a>
+      <a href="http://localhost:5173" target="_blank">🛍️ Go to Store (5173)</a>
+      <a href="http://localhost:6003" target="_blank">🎙️ Voice Dashboard (6003)</a>
+      <a href="http://localhost:5000/commanding.html" target="_blank">🤖 Automation Panel (5000)</a>
+    </div>
+    <h3 style="margin-top:24px;color:#94a3b8;">Active Configuration:</h3>
+    <pre>Port: ${PORT}\nRazorpay Key: ${RAZORPAY_KEY_ID}\nTotal In-Memory Orders: ${ordersDB.size}</pre>
+  </div>
+</body>
+</html>`);
+});
+
+// Register checkout endpoints
 app.post('/checkout', handleCheckout);
 app.post('/api/checkout', handleCheckout);
 

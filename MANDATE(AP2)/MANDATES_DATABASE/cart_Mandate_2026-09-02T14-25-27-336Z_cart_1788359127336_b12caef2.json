@@ -1,0 +1,19 @@
+{
+  "id": "cart_1788359127336_b12caef2",
+  "type": "cart",
+  "parent_id": "intent_1788359127329_3be57694",
+  "agent_id": "agent_myshoppingapp_prod_01",
+  "merchant_id": "merchant_acp_razorpay_001",
+  "line_items": [
+    {
+      "id": "shoe_001",
+      "name": "Nike Air Jordan 1 Low",
+      "price": 1999,
+      "quantity": 1
+    }
+  ],
+  "total_amount": 1999,
+  "currency": "INR",
+  "signed_at": "2026-09-02T14:25:27.335Z",
+  "signature": "ee4c5a251899f7556c59846113728f554deebeca17c7dfa1d2bc26ff24a5076f"
+}

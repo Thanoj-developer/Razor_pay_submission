@@ -1,6 +1,11 @@
+const path = require('path');
+module.paths.push(
+  path.join(__dirname, '..', 'my-react-app', 'node_modules'),
+  path.join(__dirname, '..', 'Playwright_Razorpay', 'node_modules')
+);
+
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const fs = require('fs');
 const { getLlmResponse } = require('./LLM_FOR_VOICE');
 const { runOrchestrator } = require('./orcastrator');
@@ -43,7 +48,7 @@ loadEnv();
 
 const app = express();
 const PORT = process.env.VOICE_PORT || 6003;
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:6001';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
 // Enable CORS and JSON parsing
 app.use(cors());
@@ -57,7 +62,7 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Query Router & Automation Hub</title>
+    <title>Razorpay Agentic &amp; Autonomous Commerce</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -65,20 +70,20 @@ app.get('/', (req, res) => {
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         :root {
-            --bg-primary: #0a0c10;
-            --bg-card: rgba(18, 22, 31, 0.75);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-glow: rgba(99, 102, 241, 0.25);
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --accent-orch: #f59e0b;
-            --accent-orch-bg: rgba(245, 158, 11, 0.12);
-            --accent-orch-border: rgba(245, 158, 11, 0.35);
-            --accent-autonav: #06b6d4;
-            --accent-autonav-bg: rgba(6, 182, 212, 0.12);
-            --accent-autonav-border: rgba(6, 182, 212, 0.35);
-            --accent-primary: #6366f1;
-            --accent-primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            --border-glow: rgba(99, 102, 241, 0.2);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent-orch: #d97706;
+            --accent-orch-bg: #fef3c7;
+            --accent-orch-border: #fcd34d;
+            --accent-autonav: #0891b2;
+            --accent-autonav-bg: #cffafe;
+            --accent-autonav-border: #67e8f9;
+            --accent-primary: #4f46e5;
+            --accent-primary-gradient: linear-gradient(135deg, #4f46e5, #6366f1);
         }
 
         * {
@@ -90,9 +95,9 @@ app.get('/', (req, res) => {
         body {
             background-color: var(--bg-primary);
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15), transparent 45%),
-                radial-gradient(circle at 10% 80%, rgba(6, 182, 212, 0.08), transparent 35%),
-                radial-gradient(circle at 90% 80%, rgba(245, 158, 11, 0.08), transparent 35%);
+                radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08), transparent 50%),
+                radial-gradient(circle at 10% 80%, rgba(8, 145, 178, 0.05), transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(217, 119, 6, 0.05), transparent 40%);
             min-height: 100vh;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: var(--text-main);
@@ -118,7 +123,7 @@ app.get('/', (req, res) => {
         .header-title {
             font-size: 1.85rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 30%, #a5b4fc 100%);
+            background: linear-gradient(135deg, #0f172a 30%, #4338ca 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.5px;
@@ -137,9 +142,9 @@ app.get('/', (req, res) => {
             font-size: 0.72rem;
             font-weight: 700;
             padding: 3px 8px;
-            background: rgba(99, 102, 241, 0.2);
-            color: #a5b4fc;
-            border: 1px solid rgba(99, 102, 241, 0.4);
+            background: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid #c7d2fe;
             border-radius: 6px;
             margin-left: 8px;
             vertical-align: middle;
@@ -148,11 +153,10 @@ app.get('/', (req, res) => {
         /* ── Search Bar Hero ── */
         .search-hero-card {
             background: var(--bg-card);
-            backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
             border-radius: 18px;
             padding: 24px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
@@ -163,111 +167,73 @@ app.get('/', (req, res) => {
             top: 0;
             left: 0;
             right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #6366f1, #06b6d4, #f59e0b, transparent);
-            opacity: 0.8;
+            height: 3px;
+            background: linear-gradient(90deg, #4f46e5, #0891b2, #d97706);
+            opacity: 0.9;
         }
 
         /* Active Mode Banner inside Hero */
         .mode-banner-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
+            display: none !important;
         }
         .router-label {
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--text-muted);
+            display: none !important;
         }
         .mode-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #9ca3af;
-            transition: all 0.3s ease;
-        }
-        .mode-indicator.orch {
-            background: var(--accent-orch-bg);
-            border-color: var(--accent-orch-border);
-            color: var(--accent-orch);
-            box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
-        }
-        .mode-indicator.autonav {
-            background: var(--accent-autonav-bg);
-            border-color: var(--accent-autonav-border);
-            color: var(--accent-autonav);
-            box-shadow: 0 0 16px rgba(6, 182, 212, 0.25);
-        }
-        .mode-indicator.classifying {
-            background: rgba(99, 102, 241, 0.15);
-            border-color: rgba(99, 102, 241, 0.4);
-            color: #a5b4fc;
-            box-shadow: 0 0 16px rgba(99, 102, 241, 0.3);
+            display: none !important;
         }
 
         /* Search Input Box */
         .search-input-wrapper {
             display: flex;
             align-items: center;
-            background: rgba(10, 12, 16, 0.85);
-            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
             border-radius: 12px;
             padding: 6px 8px 6px 16px;
             gap: 12px;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03);
             transition: all 0.25s ease;
         }
         .search-input-wrapper:focus-within {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+            border-color: #4f46e5;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.03);
         }
         .search-icon {
-            font-size: 1.2rem;
-            color: #6366f1;
-            user-select: none;
+            display: none !important;
         }
         .search-input {
             flex: 1;
             background: transparent;
             border: none;
             outline: none;
-            color: #ffffff;
+            color: #0f172a;
             font-size: 1rem;
             font-family: inherit;
-            padding: 8px 0;
+            padding: 8px 4px;
         }
         .search-input::placeholder {
-            color: #4b5563;
+            color: #94a3b8;
         }
         .search-btn {
             background: var(--accent-primary-gradient);
             color: #ffffff;
             border: none;
-            border-radius: 8px;
-            padding: 10px 18px;
-            font-weight: 700;
-            font-size: 0.88rem;
+            border-radius: 10px;
+            width: 38px;
+            height: 38px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
-            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+            flex-shrink: 0;
         }
         .search-btn:hover:not(:disabled) {
             transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
         }
         .search-btn:disabled {
             opacity: 0.6;
@@ -275,34 +241,12 @@ app.get('/', (req, res) => {
         }
 
         .classify-only-btn {
-            background: rgba(255, 255, 255, 0.06);
-            color: #e5e7eb;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 8px;
-            padding: 10px 14px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-        .classify-only-btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.12);
+            display: none !important;
         }
 
         /* ── Assistant Chat / Response Box ── */
         .chat-box {
-            background: var(--bg-card);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 16px 20px;
-            min-height: 80px;
-            max-height: 180px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            display: none !important;
         }
         .chat-msg {
             font-size: 0.92rem;
@@ -310,11 +254,12 @@ app.get('/', (req, res) => {
             animation: fadeIn 0.3s ease-out;
         }
         .chat-msg.user {
-            color: #93c5fd;
-            font-weight: 500;
+            color: #2563eb;
+            font-weight: 600;
         }
         .chat-msg.assistant {
-            color: #fde68a;
+            color: #0f172a;
+            font-weight: 500;
         }
         .chat-msg.routing {
             display: inline-block;
@@ -350,13 +295,13 @@ app.get('/', (req, res) => {
 
         .card {
             background: var(--bg-card);
-            backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
             border-radius: 14px;
             padding: 18px;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
         .card-header {
             display: flex;
@@ -367,7 +312,7 @@ app.get('/', (req, res) => {
             font-size: 0.85rem;
             font-weight: 700;
             letter-spacing: 0.5px;
-            color: #e5e7eb;
+            color: #1e293b;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -377,8 +322,8 @@ app.get('/', (req, res) => {
         .terminal-box {
             width: 100%;
             height: 180px;
-            background: #08090d;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #0f172a;
+            border: 1px solid #1e293b;
             border-radius: 10px;
             padding: 10px 12px;
             color: #38bdf8;
@@ -401,32 +346,32 @@ app.get('/', (req, res) => {
             overflow-y: auto;
         }
         .tab-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 8px 12px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
         .tab-item:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(99, 102, 241, 0.3);
+            background: #f1f5f9;
+            border-color: #c7d2fe;
         }
         .tab-item.active {
-            background: rgba(99, 102, 241, 0.12);
+            background: #eef2ff;
             border-color: #6366f1;
         }
         .tab-title {
             font-size: 0.8rem;
             font-weight: 600;
-            color: #ffffff;
+            color: #0f172a;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
         .tab-url {
             font-size: 0.7rem;
-            color: #9ca3af;
+            color: #64748b;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -435,8 +380,8 @@ app.get('/', (req, res) => {
 
         /* Mandate Item in DB Card */
         .mandate-item {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 8px 12px;
             display: flex;
@@ -453,19 +398,19 @@ app.get('/', (req, res) => {
             text-transform: uppercase;
         }
         .mandate-badge.intent {
-            background: rgba(99, 102, 241, 0.2);
-            color: #a5b4fc;
-            border: 1px solid rgba(99, 102, 241, 0.4);
+            background: #eef2ff;
+            color: #4338ca;
+            border: 1px solid #c7d2fe;
         }
         .mandate-badge.cart {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.4);
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
         }
         .mandate-badge.payment {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.4);
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
         }
 
         /* Modals */
@@ -473,35 +418,35 @@ app.get('/', (req, res) => {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.82);
-            backdrop-filter: blur(10px);
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
             z-index: 9999;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
         .modal-card {
-            background: #11141c;
-            border: 1px solid rgba(99, 102, 241, 0.35);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             padding: 28px;
             width: 100%;
             max-width: 440px;
-            box-shadow: 0 0 50px rgba(99, 102, 241, 0.25);
-            color: #ffffff;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            color: #0f172a;
             animation: fadeIn 0.25s ease-out;
         }
 
         /* Trusted Consent Modal Style */
         .consent-modal-card {
-            background: #0e121a;
-            border: 1.5px solid rgba(99, 102, 241, 0.5);
+            background: #ffffff;
+            border: 1.5px solid #c7d2fe;
             border-radius: 18px;
             padding: 24px;
             width: 100%;
             max-width: 460px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.3);
-            color: #ffffff;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
+            color: #0f172a;
             animation: fadeIn 0.25s ease-out;
             display: flex;
             flex-direction: column;
@@ -519,7 +464,7 @@ app.get('/', (req, res) => {
         <!-- Header -->
         <div class="header">
             <div class="header-title">
-                ⚡ SMART QUERY ROUTER &amp; AUTOMATION HUB
+                ⚡ Razorpay Agentic &amp; Autonomous Commerce
                 <span class="port-badge">PORT 6003</span>
             </div>
             <div class="header-subtitle">
@@ -539,7 +484,6 @@ app.get('/', (req, res) => {
 
             <!-- Search Input Box -->
             <div class="search-input-wrapper">
-                <span class="search-icon">🔍</span>
                 <input 
                     type="text" 
                     id="smartQueryInput" 
@@ -550,18 +494,14 @@ app.get('/', (req, res) => {
                 <button id="classifyOnlyBtn" class="classify-only-btn" title="Classify intent without running">
                     🧠 Classify
                 </button>
-                <button id="executeBtn" class="search-btn">
-                    🚀 Execute
+                <button id="executeBtn" class="search-btn" title="Send / Execute">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                 </button>
             </div>
         </div>
 
         <!-- Assistant Chat & Confirmation -->
-        <div class="chat-box" id="chatBox">
-            <div style="color: #6b7280; font-size: 0.85rem; font-style: italic; text-align: center;">
-                Type any query above and press <strong>Execute</strong> (or hit <strong>Enter</strong>) to classify and automate.
-            </div>
-        </div>
+        <div class="chat-box" id="chatBox" style="display: none;"></div>
 
         <!-- Lower Grid: Tabs & Automation Terminal Logs -->
         <div class="grid-2col">
@@ -610,40 +550,40 @@ app.get('/', (req, res) => {
     <div id="cartConsentModal" class="modal-overlay">
         <div class="consent-modal-card">
             <!-- Header -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
                 <div>
-                    <div style="font-size: 1.05rem; font-weight: 800; color: #a5b4fc; display: flex; align-items: center; gap: 8px;">
+                    <div style="font-size: 1.05rem; font-weight: 800; color: #4338ca; display: flex; align-items: center; gap: 8px;">
                         🛡️ TRUSTED CONSENT SURFACE
                     </div>
-                    <div style="font-size: 0.76rem; color: #9ca3af; margin-top: 2px;">
+                    <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">
                         Cart Assembly Review &amp; Human Authorization (AP2 Protocol)
                     </div>
                 </div>
-                <span id="consentCloseBtn" style="color: #6b7280; font-size: 1.2rem; cursor: pointer;">&times;</span>
+                <span id="consentCloseBtn" style="color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</span>
             </div>
 
             <!-- Assembled Product Card -->
-            <div style="display: flex; gap: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 12px; align-items: center;">
-                <img id="consentProductImg" src="" alt="Product Photo" style="width: 88px; height: 88px; object-fit: contain; background: #ffffff; border-radius: 8px; padding: 4px; flex-shrink: 0;">
+            <div style="display: flex; gap: 14px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 12px; align-items: center;">
+                <img id="consentProductImg" src="" alt="Product Photo" style="width: 88px; height: 88px; object-fit: contain; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px; flex-shrink: 0;">
                 <div style="display: flex; flex-direction: column; gap: 3px;">
-                    <div id="consentProductName" style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">Product Name</div>
-                    <div id="consentProductSku" style="font-size: 0.75rem; color: #9ca3af;">SKU: shoe_007</div>
-                    <div id="consentMerchantName" style="font-size: 0.75rem; color: #818cf8; font-weight: 600;">Merchant: Razorpay ACP Store</div>
-                    <div id="consentProductPrice" style="font-size: 1.15rem; font-weight: 800; color: #34d399; margin-top: 2px;">₹1299 INR</div>
+                    <div id="consentProductName" style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">Product Name</div>
+                    <div id="consentProductSku" style="font-size: 0.75rem; color: #64748b;">SKU: shoe_007</div>
+                    <div id="consentMerchantName" style="font-size: 0.75rem; color: #4f46e5; font-weight: 600;">Merchant: Razorpay ACP Store</div>
+                    <div id="consentProductPrice" style="font-size: 1.15rem; font-weight: 800; color: #059669; margin-top: 2px;">₹1299 INR</div>
                 </div>
             </div>
 
             <!-- Security & Protocol Notice -->
-            <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: #c7d2fe; line-height: 1.4;">
+            <div style="background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: #3730a3; line-height: 1.4;">
                 🔒 <strong>Cart Assembly Verified:</strong> By approving, you grant explicit consent for this transaction. The cryptographic Checkout Mandate will be signed in the next step.
             </div>
 
             <!-- Action Buttons: Reject vs Accept -->
             <div style="display: flex; gap: 10px; margin-top: 4px;">
-                <button id="consentRejectBtn" style="flex: 1; padding: 11px 16px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
+                <button id="consentRejectBtn" style="flex: 1; padding: 11px 16px; background: #fee2e2; border: 1px solid #fca5a5; color: #dc2626; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
                     ❌ Reject
                 </button>
-                <button id="consentAcceptBtn" style="flex: 2; padding: 11px 16px; background: linear-gradient(135deg, #10b981, #059669); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
+                <button id="consentAcceptBtn" style="flex: 2; padding: 11px 16px; background: linear-gradient(135deg, #059669, #10b981); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
                     ✅ Accept &amp; Authorize Cart
                 </button>
             </div>
@@ -654,64 +594,64 @@ app.get('/', (req, res) => {
     <!-- X-402 PAYMENT REQUIRED CHALLENGE MODAL (Port 6003)                   -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <div id="x402Modal" class="modal-overlay">
-        <div class="consent-modal-card" style="border-color: rgba(245, 158, 11, 0.6); box-shadow: 0 0 45px rgba(245, 158, 11, 0.25);">
+        <div class="consent-modal-card" style="border-color: #fcd34d; box-shadow: 0 20px 45px rgba(217, 119, 6, 0.15);">
             <!-- Header -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
                 <div>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                    <div style="font-size: 1.1rem; font-weight: 800; color: #d97706; display: flex; align-items: center; gap: 8px;">
                         🛡️ HTTP 402 PAYMENT REQUIRED
                     </div>
-                    <div style="font-size: 0.76rem; color: #9ca3af; margin-top: 2px;">
+                    <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">
                         X-402 Autonomous Payment Challenge Issued by Gateway
                     </div>
                 </div>
-                <span id="x402CloseBtn" style="color: #6b7280; font-size: 1.2rem; cursor: pointer;">&times;</span>
+                <span id="x402CloseBtn" style="color: #94a3b8; font-size: 1.2rem; cursor: pointer;">&times;</span>
             </div>
 
             <!-- Challenge Details Card -->
-            <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; font-family: monospace;">
+            <div style="background: #f8fafc; border: 1px solid #fed7aa; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; font-family: monospace;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
-                    <span style="color: #9ca3af;">Protocol Status:</span>
-                    <span style="color: #fbbf24; font-weight: 700;">HTTP 402 Payment Required</span>
+                    <span style="color: #64748b;">Protocol Status:</span>
+                    <span style="color: #d97706; font-weight: 700;">HTTP 402 Payment Required</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
-                    <span style="color: #9ca3af;">Order Ref:</span>
-                    <span id="x402OrderRef" style="color: #38bdf8; font-weight: 600;">order_ref_...</span>
+                    <span style="color: #64748b;">Order Ref:</span>
+                    <span id="x402OrderRef" style="color: #2563eb; font-weight: 600;">order_ref_...</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
-                    <span style="color: #9ca3af;">Amount Due:</span>
-                    <span id="x402Amount" style="color: #34d399; font-weight: 700; font-size: 0.95rem;">₹1299 INR</span>
+                    <span style="color: #64748b;">Amount Due:</span>
+                    <span id="x402Amount" style="color: #059669; font-weight: 700; font-size: 0.95rem;">₹1299 INR</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
-                    <span style="color: #9ca3af;">Challenge Nonce:</span>
-                    <span id="x402Nonce" style="color: #e5e7eb; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">1c16ad41...</span>
+                    <span style="color: #64748b;">Challenge Nonce:</span>
+                    <span id="x402Nonce" style="color: #334155; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">1c16ad41...</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
-                    <span style="color: #9ca3af;">Razorpay Order ID:</span>
-                    <span id="x402RzpOrderId" style="color: #a5b4fc;">order_rzp_...</span>
+                    <span style="color: #64748b;">Razorpay Order ID:</span>
+                    <span id="x402RzpOrderId" style="color: #4f46e5;">order_rzp_...</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem;">
-                    <span style="color: #9ca3af;">Settlement Rail:</span>
-                    <span style="color: #38bdf8;">Razorpay (Test Mode)</span>
+                    <span style="color: #64748b;">Settlement Rail:</span>
+                    <span style="color: #0891b2; font-weight: 600;">Razorpay (Test Mode)</span>
                 </div>
             </div>
 
             <!-- Notice -->
-            <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: #fde68a; line-height: 1.45;">
+            <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: #92400e; line-height: 1.45;">
                 ℹ️ <strong>X-402 Challenge Active:</strong> No funds have been deducted yet. The merchant requires a cryptographically signed settlement proof (Razorpay Test Mode signature) to finalize this transaction.
             </div>
 
             <!-- Action Buttons -->
             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
                 <div style="display: flex; gap: 8px;">
-                    <button id="x402CheckoutUiBtn" style="flex: 1.2; padding: 11px 16px; background: linear-gradient(135deg, #6366f1, #4f46e5); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <button id="x402CheckoutUiBtn" style="flex: 1.2; padding: 11px 16px; background: linear-gradient(135deg, #4f46e5, #6366f1); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35); display: flex; align-items: center; justify-content: center; gap: 6px;">
                         💳 Pay with Razorpay UI
                     </button>
-                    <button id="x402SettleBtn" style="flex: 1; padding: 11px 16px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);">
+                    <button id="x402SettleBtn" style="flex: 1; padding: 11px 16px; background: linear-gradient(135deg, #d97706, #f59e0b); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);">
                         ⚡ 1-Click Settle
                     </button>
                 </div>
-                <button id="x402DismissBtn" style="width: 100%; padding: 8px 14px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); color: #9ca3af; border-radius: 8px; font-weight: 500; font-size: 0.8rem; cursor: pointer;">
+                <button id="x402DismissBtn" style="width: 100%; padding: 8px 14px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">
                     🔍 Keep Unsettled (Protocol Inspection)
                 </button>
             </div>
@@ -721,11 +661,11 @@ app.get('/', (req, res) => {
     <!-- OTP Modal (HITL) -->
     <div id="otpModal" class="modal-overlay">
         <div class="modal-card">
-            <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">🔑 OTP / 2FA Verification</div>
-            <div id="otpModalDesc" style="color: #9ca3af; font-size: 0.82rem; margin-bottom: 16px;">Please enter the verification code to proceed.</div>
-            <input id="otpModalInput" type="text" placeholder="Enter OTP code..." style="width: 100%; padding: 10px 12px; background: rgba(0,0,0,0.5); border: 1px solid rgba(99,102,241,0.4); border-radius: 8px; color: #fff; font-size: 1rem; outline: none; margin-bottom: 16px;">
+            <div style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">🔑 OTP / 2FA Verification</div>
+            <div id="otpModalDesc" style="color: #64748b; font-size: 0.82rem; margin-bottom: 16px;">Please enter the verification code to proceed.</div>
+            <input id="otpModalInput" type="text" placeholder="Enter OTP code..." style="width: 100%; padding: 10px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; font-size: 1rem; outline: none; margin-bottom: 16px;">
             <div style="display: flex; gap: 10px;">
-                <button id="otpModalCancel" style="flex: 1; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #9ca3af; cursor: pointer;">Cancel</button>
+                <button id="otpModalCancel" style="flex: 1; padding: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; color: #64748b; cursor: pointer;">Cancel</button>
                 <button id="otpModalSubmit" style="flex: 2; padding: 10px; background: var(--accent-primary-gradient); border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer;">Submit OTP</button>
             </div>
         </div>
@@ -734,10 +674,10 @@ app.get('/', (req, res) => {
     <!-- Option Select Modal (HITL) -->
     <div id="optionModal" class="modal-overlay">
         <div class="modal-card">
-            <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;">📝 Select Option</div>
-            <div id="optionModalDesc" style="color: #9ca3af; font-size: 0.82rem; margin-bottom: 16px;">Select one of the options below:</div>
+            <div style="font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 8px;">📝 Select Option</div>
+            <div id="optionModalDesc" style="color: #64748b; font-size: 0.82rem; margin-bottom: 16px;">Select one of the options below:</div>
             <div id="optionModalList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;"></div>
-            <button id="optionModalCancel" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #9ca3af; cursor: pointer;">Cancel</button>
+            <button id="optionModalCancel" style="width: 100%; padding: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; color: #64748b; cursor: pointer;">Cancel</button>
         </div>
     </div>
 
@@ -745,8 +685,8 @@ app.get('/', (req, res) => {
     <div id="successModal" class="modal-overlay">
         <div class="modal-card" style="text-align: center; max-width: 480px;">
             <div style="font-size: 2.8rem; margin-bottom: 10px;">🎉</div>
-            <div id="successModalTitle" style="color: #38bdf8; font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">Order &amp; Mandate Complete!</div>
-            <div id="successModalMsg" style="color: #e5e7eb; font-size: 0.88rem; line-height: 1.5; margin-bottom: 18px;">Payment details and settlement receipt will appear here.</div>
+            <div id="successModalTitle" style="color: #4f46e5; font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">Order &amp; Mandate Complete!</div>
+            <div id="successModalMsg" style="color: #334155; font-size: 0.88rem; line-height: 1.5; margin-bottom: 18px;">Payment details and settlement receipt will appear here.</div>
             <button id="successModalClose" style="padding: 9px 24px; background: var(--accent-primary-gradient); border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer;">Close</button>
         </div>
     </div>
@@ -816,6 +756,9 @@ app.get('/', (req, res) => {
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
+        const ARROW_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>';
+        const SPINNER_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>';
+
         // ── Classify Only Handler ──
         classifyOnlyBtn.addEventListener('click', async () => {
             const query = smartQueryInput.value.trim();
@@ -864,7 +807,7 @@ app.get('/', (req, res) => {
 
             executeBtn.disabled = true;
             classifyOnlyBtn.disabled = true;
-            executeBtn.innerHTML = '⏳ Executing...';
+            executeBtn.innerHTML = SPINNER_SVG;
             updateModeBadge(null, 'classifying');
 
             addChatMessage('user', query);
@@ -937,7 +880,7 @@ app.get('/', (req, res) => {
                 currentEventSource = null;
                 executeBtn.disabled = false;
                 classifyOnlyBtn.disabled = false;
-                executeBtn.innerHTML = '🚀 Execute';
+                executeBtn.innerHTML = ARROW_SVG;
                 log('Execution finished! (' + (d.result?.status || d.inbox) + ')', 'success');
 
                 if (d.response) {
@@ -961,7 +904,7 @@ app.get('/', (req, res) => {
                 currentEventSource = null;
                 executeBtn.disabled = false;
                 classifyOnlyBtn.disabled = false;
-                executeBtn.innerHTML = '🚀 Execute';
+                executeBtn.innerHTML = ARROW_SVG;
                 updateModeBadge(null);
             });
 
@@ -969,12 +912,12 @@ app.get('/', (req, res) => {
                 if (es.readyState === EventSource.CLOSED) {
                     executeBtn.disabled = false;
                     classifyOnlyBtn.disabled = false;
-                    executeBtn.innerHTML = '🚀 Execute';
+                    executeBtn.innerHTML = ARROW_SVG;
                 }
             };
         }
 
-        // ── Active Tabs ──
+        // ── Active Tabs Auto-Sync ──
         async function loadActiveTabs() {
             try {
                 const res = await fetch('/api/list-tabs', { method: 'POST' });
@@ -985,26 +928,53 @@ app.get('/', (req, res) => {
                     data.tabs.forEach(t => {
                         const div = document.createElement('div');
                         div.className = 'tab-item ' + (t.isActive ? 'active' : '');
-                        div.innerHTML = '<div class="tab-title">' + (t.title || 'Untitled Tab') + '</div><div class="tab-url">' + (t.url || '') + '</div>';
+                        div.style.cursor = 'pointer';
+                        div.title = 'Click to focus this tab in the headed browser';
+                        div.innerHTML = 
+                            '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                                '<div class="tab-title" style="font-weight:600; color:#f8fafc;">' + (t.title || 'Browser Tab') + '</div>' +
+                                (t.isActive ? '<span style="font-size:0.65rem; background:#065f46; color:#34d399; padding:2px 6px; border-radius:4px; font-weight:700;">ACTIVE</span>' : '') +
+                            '</div>' +
+                            '<div class="tab-url" style="font-size:0.72rem; color:#94a3b8; font-family:monospace; margin-top:2px;">' + (t.url || '') + '</div>';
                         div.onclick = async () => {
                             await fetch('/api/switch-tab', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ tabIndex: t.index })
+                                body: JSON.stringify({ index: t.index, tabIndex: t.index })
                             });
                             loadActiveTabs();
                         };
                         tabsListContainer.appendChild(div);
                     });
                 } else {
-                    tabsListContainer.innerHTML = '<div style="color:#6b7280; font-size:0.75rem; text-align:center; padding:10px;">No open tabs</div>';
+                    tabsListContainer.innerHTML = 
+                        '<div style="color:#6b7280; font-size:0.75rem; text-align:center; padding:10px;">' +
+                            'No tabs detected. ' +
+                            '<button onclick="openStoreInBrowser()" style="margin-top:6px; background:#4f46e5; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-size:0.72rem; cursor:pointer;">Open Store (5173)</button>' +
+                        '</div>';
                 }
             } catch (err) {
-                tabsListContainer.innerHTML = '<div style="color:#ef4444; font-size:0.75rem; text-align:center; padding:10px;">Failed to load tabs</div>';
+                tabsListContainer.innerHTML = '<div style="color:#ef4444; font-size:0.75rem; text-align:center; padding:10px;">Connecting to browser on Port 5000...</div>';
             }
         }
+
+        async function openStoreInBrowser() {
+            try {
+                await fetch('/api/open-tab', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'http://localhost:5173' })
+                });
+                setTimeout(loadActiveTabs, 800);
+            } catch (e) {
+                console.error('Failed to open tab:', e);
+            }
+        }
+
         refreshTabsBtn.addEventListener('click', loadActiveTabs);
         loadActiveTabs();
+        // Auto-poll active tabs every 2.5 seconds to keep dashboard live
+        setInterval(loadActiveTabs, 2500);
 
         // ── Mandates Database List ──
         async function loadMandatesList() {
@@ -1484,26 +1454,65 @@ app.post('/api/voice-autonavigate', async (req, res) => {
 });
 
 // Endpoint: Proxy list-tabs to backend
-app.post('/api/list-tabs', async (req, res) => {
+app.all('/api/list-tabs', async (req, res) => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/list-tabs`, {
+    const response = await fetch(`${BACKEND_URL}/list-tabs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
     const result = await response.json();
     res.json(result);
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    try {
+      const fallback = await fetch(`${BACKEND_URL}/api/list-tabs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const resFallback = await fallback.json();
+      return res.json(resFallback);
+    } catch (fbErr) {
+      res.status(500).json({ success: false, error: err.message });
+    }
   }
 });
 
 // Endpoint: Proxy switch-tab to backend
-app.post('/api/switch-tab', async (req, res) => {
+app.all('/api/switch-tab', async (req, res) => {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/switch-tab`, {
+    const response = await fetch(`${BACKEND_URL}/switch-tab`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(req.body || {})
+    });
+    const result = await response.json();
+    res.json(result);
+  } catch (err) {
+    try {
+      const fallback = await fetch(`${BACKEND_URL}/api/switch-tab`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req.body || {})
+      });
+      const resFallback = await fallback.json();
+      return res.json(resFallback);
+    } catch (fbErr) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  }
+});
+
+// Endpoint: Proxy open URL in new tab on Playwright browser
+app.post('/api/open-tab', async (req, res) => {
+  try {
+    const { url } = req.body;
+    const targetUrl = url || 'http://localhost:5173';
+    const executePayload = {
+      code: `await page.goto("${targetUrl}");`
+    };
+    const response = await fetch(`${BACKEND_URL}/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(executePayload)
     });
     const result = await response.json();
     res.json(result);
