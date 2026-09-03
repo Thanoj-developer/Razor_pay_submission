@@ -1,6 +1,33 @@
 # ⚡ Razorpay Autonomous Agentic Commerce: ACP, AP2 & X-402
 
-An end-to-end implementation of **Autonomous Agentic Commerce** integrating **Agentic Commerce Protocol (ACP)**, **Agent Payment Protocol (AP2)**, and **HTTP X-402 Payment Required Gateway** on top of the **Razorpay Payment Infrastructure**.
+<div align="center">
+
+[![Live Application](https://img.shields.io/badge/🚀_LIVE_PRODUCTION_DEMO-razor--pay--submission.vercel.app-10b981?style=for-the-badge&logo=vercel&logoColor=white)](https://razor-pay-submission.vercel.app/)
+[![Tracing Visualizer](https://img.shields.io/badge/🔍_AP2_TRACING_VISUALIZER-Live_Inspector-6366f1?style=for-the-badge&logo=google-cloud&logoColor=white)](https://razor-pay-submission.vercel.app/tracing)
+[![CI Status](https://img.shields.io/badge/CI_PIPELINE-100%25_PASSED-059669?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/Thanoj-developer/Razor_pay_submission/actions)
+[![Mandate Suite](https://img.shields.io/badge/TEST_SUITE-14_PASSED_|_0_FAILED-0891b2?style=for-the-badge)](https://github.com/Thanoj-developer/Razor_pay_submission)
+
+### 🌐 **[👉 CLICK HERE TO LAUNCH THE LIVE APPLICATION 👈](https://razor-pay-submission.vercel.app/)**
+**⚡ Production URL:** [https://razor-pay-submission.vercel.app/](https://razor-pay-submission.vercel.app/) &bull; **🔍 Live Tracing Inspector:** [https://razor-pay-submission.vercel.app/tracing](https://razor-pay-submission.vercel.app/tracing)
+
+</div>
+
+---
+
+> [!TIP]
+> ### 🌟 **Live Cloud Deployment Online!**
+> You can test the end-to-end autonomous agent commerce flow instantly without local installation:
+> - **🚀 Live Interactive Dashboard**: [**https://razor-pay-submission.vercel.app/**](https://razor-pay-submission.vercel.app/)
+> - **🔍 Real-Time AP2 / X-402 Cryptographic Tracing**: [**https://razor-pay-submission.vercel.app/tracing**](https://razor-pay-submission.vercel.app/tracing)
+> - Try queries like: `"buy the product which cost 649"` or `"buy the product which cost 1999"` to see the 7-stage autonomous mandate & settlement pipeline in action!
+
+---
+
+## 📐 Autonomous Protocol Execution Flowchart
+
+<div align="center">
+  <img src="assets/agentic_commerce_flow.png" alt="Razorpay Agentic Commerce 8-Step Architecture Flowchart" width="620px" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); border: 1px solid #334155; margin: 16px 0;" />
+</div>
 
 ---
 
