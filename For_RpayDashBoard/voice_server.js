@@ -493,14 +493,29 @@ app.get('/', (req, res) => {
                     type="text" 
                     id="smartQueryInput" 
                     class="search-input" 
-                    placeholder="Type command e.g. 'Click on buy now for Converse' or 'Launch http://localhost:5173/'..."
+                    placeholder="Type command e.g. 'buy the product which cost 649' or 'open http://localhost:5173/'..."
+                    onkeydown="if(event.key==='Enter'){event.preventDefault(); submitQueryNow();}"
                     autofocus
                 >
                 <button id="classifyOnlyBtn" class="classify-only-btn" title="Classify intent without running">
                     🧠 Classify
                 </button>
-                <button id="executeBtn" class="search-btn" title="Send / Execute">
+                <button id="executeBtn" onclick="submitQueryNow()" class="search-btn" title="Send / Execute">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; display: flex; align-items: center;">💡 Suggestions:</span>
+                <button onclick="setQuery('buy the product which cost 649')" style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #a5b4fc; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; cursor: pointer;">
+                    👟 Buy Sneaker (₹649)
+                </button>
+                <button onclick="setQuery('buy the product which cost 1999')" style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; cursor: pointer;">
+                    🏀 Buy Air Jordan (₹1999)
+                </button>
+                <button onclick="setQuery('open http://localhost:5173/')" style="background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #93c5fd; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; cursor: pointer;">
+                    🌐 Open Storefront
                 </button>
             </div>
         </div>
@@ -873,17 +888,23 @@ app.get('/', (req, res) => {
         });
 
         // ── Execute Query via SSE Stream ──
-        executeBtn.addEventListener('click', () => {
+        window.submitQueryNow = function() {
             const query = smartQueryInput.value.trim();
-            if (!query) return;
+            if (!query) {
+                smartQueryInput.focus();
+                return;
+            }
             executeCommand(query);
+        };
+
+        executeBtn.addEventListener('click', () => {
+            window.submitQueryNow();
         });
 
         smartQueryInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                const query = smartQueryInput.value.trim();
-                if (!query) return;
-                executeCommand(query);
+                e.preventDefault();
+                window.submitQueryNow();
             }
         });
 
@@ -1126,14 +1147,14 @@ app.get('/', (req, res) => {
             if (stageNum === 4) {
                 title.innerHTML = '📜 Stage 4: ACP Protocol Mandates Inspector (Customer &amp; Merchant)';
                 tabs.innerHTML = 
-                    '<button id="dashTabCust" onclick="switchDashDrawerTab(4, \'customer\')" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">👤 Customer Intent</button>' +
-                    '<button id="dashTabMerch" onclick="switchDashDrawerTab(4, \'merchant\')" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#334155; color:#cbd5e1; cursor:pointer; font-weight:600;">🏪 Merchant Cart</button>';
+                    '<button id="dashTabCust" onclick="switchDashDrawerTab(4, &quot;customer&quot;)" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">👤 Customer Intent</button>' +
+                    '<button id="dashTabMerch" onclick="switchDashDrawerTab(4, &quot;merchant&quot;)" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#334155; color:#cbd5e1; cursor:pointer; font-weight:600;">🏪 Merchant Cart</button>';
                 switchDashDrawerTab(4, 'customer');
             } else if (stageNum === 5) {
                 title.innerHTML = '💳 Stage 5: AP2 Mandate &amp; X-402 Challenge Inspector';
                 tabs.innerHTML = 
-                    '<button id="dashTabPay" onclick="switchDashDrawerTab(5, \'payment\')" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">💳 AP2 Payment Mandate</button>' +
-                    '<button id="dashTabX402" onclick="switchDashDrawerTab(5, \'x402\')" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#334155; color:#cbd5e1; cursor:pointer; font-weight:600;">🛡️ X-402 Challenge</button>';
+                    '<button id="dashTabPay" onclick="switchDashDrawerTab(5, &quot;payment&quot;)" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">💳 AP2 Payment Mandate</button>' +
+                    '<button id="dashTabX402" onclick="switchDashDrawerTab(5, &quot;x402&quot;)" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#334155; color:#cbd5e1; cursor:pointer; font-weight:600;">🛡️ X-402 Challenge</button>';
                 switchDashDrawerTab(5, 'payment');
             } else {
                 tabs.innerHTML = '';

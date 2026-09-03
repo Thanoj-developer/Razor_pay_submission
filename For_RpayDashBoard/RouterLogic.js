@@ -58,6 +58,7 @@ async function classifyWithLLM(query) {
     const apiKey = process.env.NVIDIA_API_KEY || FALLBACK_NVIDIA_API_KEY;
     const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
       method: 'POST',
+      signal: AbortSignal.timeout(2500),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`

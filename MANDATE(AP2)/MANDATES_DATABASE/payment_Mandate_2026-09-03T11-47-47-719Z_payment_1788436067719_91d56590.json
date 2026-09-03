@@ -1,0 +1,9 @@
+{
+  "id": "payment_1788436067719_91d56590",
+  "type": "payment",
+  "parent_cart_id": "cart_1788436067710_70af64b4",
+  "agent_id": "agent_myshoppingapp_prod_01",
+  "modality": "human-present",
+  "created_at": "2026-09-03T11:47:47.719Z",
+  "signature": "f43f2dedbd33e41ba65ce4e1b2d37e3d8a945e6d25ab9704b80f9691c6b441b8"
+}

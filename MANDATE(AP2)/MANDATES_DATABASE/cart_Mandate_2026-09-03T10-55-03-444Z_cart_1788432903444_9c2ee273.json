@@ -1,0 +1,19 @@
+{
+  "id": "cart_1788432903444_9c2ee273",
+  "type": "cart",
+  "parent_id": "intent_1788432903439_a5bda52c",
+  "agent_id": "agent_myshoppingapp_prod_01",
+  "merchant_id": "merchant_acp_razorpay_001",
+  "line_items": [
+    {
+      "id": "shoe_004",
+      "name": "Casual Retro Green Sneaker",
+      "price": 649,
+      "quantity": 1
+    }
+  ],
+  "total_amount": 649,
+  "currency": "INR",
+  "signed_at": "2026-09-03T10:55:03.444Z",
+  "signature": "1dcfd6c2d6bb030bcb808e48a0bc9a9f6e65e2358bb360a6fb69950e43ce9c8b"
+}
