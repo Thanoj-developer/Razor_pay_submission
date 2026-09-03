@@ -1,0 +1,17 @@
+{
+  "id": "intent_1788449463627_8ac08543",
+  "type": "intent",
+  "issuer": "user_001",
+  "agent_id": "agent_myshoppingapp_prod_01",
+  "payload": {
+    "max_amount": 1999,
+    "currency": "INR",
+    "merchant_ids": [
+      "merchant_acp_razorpay_001"
+    ],
+    "item_ref": "shoe_001",
+    "expires_at": "2026-09-03T15:46:03.626Z"
+  },
+  "signed_at": "2026-09-03T15:31:03.626Z",
+  "signature": "2090236892cee7e093fceb5bf258c504bdfb4845e4c6682a37a368f151e81137"
+}
