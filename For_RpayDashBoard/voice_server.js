@@ -1684,6 +1684,11 @@ app.get('/', (req, res) => {
             });
         }
 
+        window.openMerchantCatalogModal = openMerchantCatalogModal;
+        window.closeMerchantCatalogModal = closeMerchantCatalogModal;
+        window.orderFromMerchantCatalog = orderFromMerchantCatalog;
+        window.openStorefrontTab = openStorefrontTab;
+
         refreshTabsBtn.addEventListener('click', loadActiveTabs);
         loadActiveTabs();
         // Auto-poll active tabs every 2.5 seconds to keep dashboard live
