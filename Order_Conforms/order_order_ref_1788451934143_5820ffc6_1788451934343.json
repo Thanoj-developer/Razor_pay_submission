@@ -1,0 +1,25 @@
+{
+  "order_id": "order_ref_1788451934143_5820ffc6",
+  "order_ref": "order_ref_1788451934143_5820ffc6",
+  "status": "CONFIRMED",
+  "payment_id": "pay_mock_1788451934343",
+  "razorpay_order_id": "order_TXcqSRCrshyEUQ",
+  "amount": 1299,
+  "currency": "INR",
+  "items": [
+    {
+      "id": "shoe_007",
+      "name": "Converse Street Sneaker",
+      "price": 1299,
+      "quantity": 1
+    }
+  ],
+  "customer_intent_id": "intent_1788451934128_c1199273",
+  "cart_mandate_id": "cart_1788451934133_d86b47d4",
+  "payment_mandate_id": "payment_1788451934138_04dac5a1",
+  "merchant_id": "merchant_acp_razorpay_001",
+  "merchant_name": "Razorpay ACP Store",
+  "settlement_rail": "Razorpay AP2 / X-402 Live Test",
+  "confirmed_at": "2026-09-03T16:12:14.343Z",
+  "filename": "order_order_ref_1788451934143_5820ffc6_1788451934343.json"
+}

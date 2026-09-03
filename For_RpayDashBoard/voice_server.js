@@ -54,10 +54,26 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/images', express.static(path.join(__dirname, '..', 'my-react-app', 'public', 'images')));
+app.use('/store', express.static(path.join(__dirname, '..', 'my-react-app', 'dist')));
 
 // Tracing UI Route
 app.get('/tracing', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'Tracing', 'demo.html'));
+});
+
+// Merchant Catalog Feed API
+app.get('/api/catalog', (req, res) => {
+  const catalog = [
+    { id: "shoe_001", name: "Nike Air Jordan 1 Low", category: "Sneakers", price: 1999, currency: "INR", stock: 10, image: "/images/air_jordan.png", badge: "Best Seller", desc: "Iconic court silhouette with premium leather & Air cushioning." },
+    { id: "shoe_002", name: "Dify Magsic Chunky Sneaker", category: "Streetwear", price: 1899, currency: "INR", stock: 5, image: "/images/chunky_sneaker.jpg", badge: "Trending", desc: "Bold aesthetic with breathable mesh and chunky sole." },
+    { id: "shoe_003", name: "Classic Navy Suede Oxford", category: "Formal", price: 999, currency: "INR", stock: 0, image: "/images/blue_suede.png", badge: "Out of Stock", desc: "Handcrafted brushed navy suede with reinforced stitching." },
+    { id: "shoe_004", name: "Casual Retro Green Sneaker", category: "Casual", price: 649, currency: "INR", stock: 15, image: "/images/green_sneaker.png", badge: "Hot Deal", desc: "Vintage runner with lightweight EVA midsole." },
+    { id: "shoe_005", name: "Cult Sport Trail Runner", category: "Performance", price: 899, currency: "INR", stock: 8, image: "/images/trail_running.png", badge: "Trail Ready", desc: "Water-resistant all-terrain grip shoe." },
+    { id: "shoe_006", name: "Woodland Leather Boot", category: "Outdoor", price: 1599, currency: "INR", stock: 6, image: "/images/blue_suede.png", badge: "Durable", desc: "Heavy-duty full-grain leather boot." },
+    { id: "shoe_007", name: "Converse Street Sneaker", category: "Casual", price: 1299, currency: "INR", stock: 12, image: "/images/green_sneaker.png", badge: "Classic", desc: "Timeless canvas high-top with vulcanized rubber." }
+  ];
+  res.json({ success: true, merchantName: "Razorpay ACP Partner Store", catalog });
 });
 
 // Root route: Modern Search-Based Smart Query Router Dashboard
@@ -467,13 +483,26 @@ app.get('/', (req, res) => {
 <body>
     <div class="container">
         <!-- Header -->
-        <div class="header">
-            <div class="header-title">
-                ⚡ Razorpay Agentic &amp; Autonomous Commerce
-                <span class="port-badge">PORT 6003</span>
+        <div class="header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <div class="header-title">
+                    ⚡ Razorpay Agentic &amp; Autonomous Commerce
+                    <span class="port-badge">PORT 6003</span>
+                </div>
+                <div class="header-subtitle">
+                    Autonomous Intent Classification &bull; AP2 Mandate Authorization &bull; Auto-Navigation Mode
+                </div>
             </div>
-            <div class="header-subtitle">
-                Autonomous Intent Classification &bull; AP2 Mandate Authorization &bull; Auto-Navigation Mode
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button id="openMerchantStoreBtn" onclick="openMerchantCatalogModal()" style="display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: #ffffff; border: none; padding: 7px 14px; border-radius: 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3); transition: all 0.2s;">
+                    <span>🏪</span>
+                    <span>Open Merchant Webpage</span>
+                    <span style="background: rgba(0,0,0,0.25); font-size: 0.65rem; padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2);">7 Items</span>
+                </button>
+                <a href="/tracing" target="_blank" style="display: flex; align-items: center; gap: 6px; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #a5b4fc; padding: 7px 12px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; text-decoration: none;">
+                    <span>🔍</span>
+                    <span>Tracing Visualizer</span>
+                </a>
             </div>
         </div>
 
@@ -506,8 +535,11 @@ app.get('/', (req, res) => {
             </div>
 
             <!-- Quick Suggestions -->
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center;">
                 <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; display: flex; align-items: center;">💡 Suggestions:</span>
+                <button onclick="openMerchantCatalogModal()" style="background: rgba(16,185,129,0.2); border: 1px solid #10b981; color: #34d399; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; cursor: pointer; font-weight: 700;">
+                    🏪 View Merchant Webpage (7 Products)
+                </button>
                 <button onclick="setQuery('buy the product which cost 649')" style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: #a5b4fc; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; cursor: pointer;">
                     👟 Buy Sneaker (₹649)
                 </button>
@@ -705,6 +737,57 @@ app.get('/', (req, res) => {
                 </button>
                 <button id="consentAcceptBtn" style="flex: 2; padding: 11px 16px; background: linear-gradient(135deg, #059669, #10b981); border: none; color: #ffffff; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">
                     ✅ Accept &amp; Authorize Cart
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- 🏪 MERCHANT STOREFRONT MODAL (Browse Live Merchant Offers)             -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <div id="merchantStorefrontModal" class="modal-overlay">
+        <div class="consent-modal-card" style="max-width: 820px; width: 92%; max-height: 88vh; overflow-y: auto; background: #0f172a; color: #f8fafc; border: 1.5px solid #10b981; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); padding: 22px;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #1e293b; padding-bottom: 14px;">
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div style="font-size: 2rem; background: rgba(16,185,129,0.15); border: 1px solid #10b981; border-radius: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">🏪</div>
+                    <div>
+                        <div style="font-size: 1.18rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                            <span>Razorpay ACP Merchant Storefront</span>
+                            <span style="font-size: 0.65rem; background: #065f46; color: #34d399; padding: 2px 8px; border-radius: 6px; font-weight: 800; border: 1px solid #059669;">LIVE CATALOG</span>
+                        </div>
+                        <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 3px;">
+                            Official Urban Kicks &amp; Apparel Store &bull; Agentic Commerce Protocol (ACP) &amp; AP2 Enabled
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closeMerchantCatalogModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.6rem; cursor: pointer; padding: 2px 6px;">&times;</button>
+            </div>
+
+            <!-- Store Info Banner & Direct Link -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 10px 14px; font-size: 0.78rem; margin: 12px 0 6px 0;">
+                <div style="color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+                    <span style="color: #34d399; font-size: 1rem;">🛍️</span>
+                    <span>Browse available products below. Click <strong>"Buy with Agent"</strong> to execute autonomous checkout!</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="openStorefrontTab()" style="background: rgba(99,102,241,0.2); border: 1px solid #6366f1; color: #a5b4fc; padding: 5px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <span>🌐</span>
+                        <span>Open http://localhost:5173/</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Product Cards Grid -->
+            <div id="merchantProductsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 10px;">
+                <!-- Dynamically populated via renderMerchantCatalogGrid() -->
+            </div>
+
+            <!-- Footer / Dismiss -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1e293b; padding-top: 14px; margin-top: 14px;">
+                <span style="font-size: 0.75rem; color: #64748b;">Powered by Razorpay AP2 / X-402 Autonomous Rails</span>
+                <button onclick="closeMerchantCatalogModal()" style="padding: 8px 18px; background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">
+                    Close Storefront View
                 </button>
             </div>
         </div>
@@ -1524,6 +1607,81 @@ app.get('/', (req, res) => {
             } catch (e) {
                 console.error('Failed to open tab:', e);
             }
+        }
+
+        function openStorefrontTab() {
+            window.open('http://localhost:5173/', '_blank');
+            openStoreInBrowser();
+        }
+
+        // ── Merchant Storefront Catalog Modal Controller ──
+        const merchantCatalogData = [
+            { id: "shoe_001", name: "Nike Air Jordan 1 Low", category: "Sneakers", price: 1999, currency: "INR", stock: 10, image: "/images/air_jordan.png", badge: "Best Seller", desc: "Iconic court silhouette with premium leather & Air cushioning." },
+            { id: "shoe_002", name: "Dify Magsic Chunky Sneaker", category: "Streetwear", price: 1899, currency: "INR", stock: 5, image: "/images/chunky_sneaker.jpg", badge: "Trending", desc: "Bold aesthetic with breathable mesh and chunky sole." },
+            { id: "shoe_003", name: "Classic Navy Suede Oxford", category: "Formal", price: 999, currency: "INR", stock: 0, image: "/images/blue_suede.png", badge: "Out of Stock", desc: "Handcrafted brushed navy suede with reinforced welt stitching." },
+            { id: "shoe_004", name: "Casual Retro Green Sneaker", category: "Casual", price: 649, currency: "INR", stock: 15, image: "/images/green_sneaker.png", badge: "Hot Deal", desc: "Vintage runner with lightweight EVA midsole." },
+            { id: "shoe_005", name: "Cult Sport Trail Runner", category: "Performance", price: 899, currency: "INR", stock: 8, image: "/images/trail_running.png", badge: "Trail Ready", desc: "Water-resistant all-terrain grip shoe." },
+            { id: "shoe_006", name: "Woodland Leather Boot", category: "Outdoor", price: 1599, currency: "INR", stock: 6, image: "/images/blue_suede.png", badge: "Durable", desc: "Heavy-duty full-grain leather boot." },
+            { id: "shoe_007", name: "Converse Street Sneaker", category: "Casual", price: 1299, currency: "INR", stock: 12, image: "/images/green_sneaker.png", badge: "Classic", desc: "Timeless canvas high-top with vulcanized rubber." }
+        ];
+
+        function openMerchantCatalogModal() {
+            renderMerchantCatalogGrid();
+            const modal = document.getElementById('merchantStorefrontModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeMerchantCatalogModal() {
+            const modal = document.getElementById('merchantStorefrontModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function orderFromMerchantCatalog(price, productName) {
+            closeMerchantCatalogModal();
+            setQuery('buy the product which cost ' + price);
+            setTimeout(() => {
+                submitQueryNow();
+            }, 300);
+        }
+
+        function renderMerchantCatalogGrid() {
+            const grid = document.getElementById('merchantProductsGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            merchantCatalogData.forEach(item => {
+                const card = document.createElement('div');
+                card.style.background = '#1e293b';
+                card.style.border = '1px solid #334155';
+                card.style.borderRadius = '12px';
+                card.style.padding = '12px';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.justifyContent = 'space-between';
+                card.style.transition = 'all 0.2s';
+                card.onmouseenter = () => { card.style.borderColor = '#10b981'; card.style.transform = 'translateY(-2px)'; };
+                card.onmouseleave = () => { card.style.borderColor = '#334155'; card.style.transform = 'none'; };
+
+                const isOut = item.stock === 0;
+                card.innerHTML = 
+                    '<div style="position:relative; width:100%; height:130px; background:#0f172a; border-radius:8px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">' +
+                        '<img src="' + item.image + '" alt="' + item.name + '" style="max-height:110px; max-width:90%; object-fit:contain;" onerror="this.src=\'http://localhost:5173' + item.image + '\'">' +
+                        '<span style="position:absolute; top:6px; right:6px; font-size:0.65rem; background:rgba(0,0,0,0.75); color:' + (isOut ? '#f87171' : '#34d399') + '; padding:2px 7px; border-radius:4px; font-weight:700; border:1px solid ' + (isOut ? '#ef4444' : '#10b981') + ';">' + (isOut ? 'Out of Stock' : item.badge) + '</span>' +
+                    '</div>' +
+                    '<div>' +
+                        '<div style="font-size:0.68rem; color:#94a3b8; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">' + item.category + '</div>' +
+                        '<div style="font-size:0.86rem; font-weight:700; color:#f8fafc; margin:2px 0 4px 0; line-height:1.25;">' + item.name + '</div>' +
+                        '<div style="font-size:0.72rem; color:#cbd5e1; margin-bottom:10px; line-height:1.35;">' + item.desc + '</div>' +
+                    '</div>' +
+                    '<div style="margin-top:auto; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">' +
+                        '<div style="font-size:0.95rem; font-weight:800; color:#34d399;">₹' + item.price.toLocaleString() + '</div>' +
+                        (isOut ? 
+                            '<button disabled style="background:#334155; color:#94a3b8; border:none; padding:6px 10px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:not-allowed;">Sold Out</button>' : 
+                            '<button onclick="orderFromMerchantCatalog(' + item.price + ', \'' + item.name.replace(/'/g, "\\'") + '\')" style="background:linear-gradient(135deg, #059669, #10b981); color:#ffffff; border:none; padding:6px 12px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(16,185,129,0.35);">🤖 Buy with Agent</button>'
+                        ) +
+                    '</div>';
+                grid.appendChild(card);
+            });
         }
 
         refreshTabsBtn.addEventListener('click', loadActiveTabs);
