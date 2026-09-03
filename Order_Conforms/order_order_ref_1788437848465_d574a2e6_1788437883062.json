@@ -1,0 +1,25 @@
+{
+  "order_id": "order_ref_1788437848465_d574a2e6",
+  "order_ref": "order_ref_1788437848465_d574a2e6",
+  "status": "CONFIRMED",
+  "payment_id": "pay_1788437883047_f6d585",
+  "razorpay_order_id": "order_TXYqUDQevYY4WB",
+  "amount": 649,
+  "currency": "INR",
+  "items": [
+    {
+      "id": "shoe_004",
+      "name": "Casual Retro Green Sneaker",
+      "price": 649,
+      "quantity": 1
+    }
+  ],
+  "customer_intent_id": "intent_1788437848330_506bfb36",
+  "cart_mandate_id": "cart_1788437848363_c98c6fca",
+  "payment_mandate_id": "payment_1788437848369_c6d00207",
+  "merchant_id": "merchant_acp_razorpay_001",
+  "merchant_name": "Razorpay ACP Store",
+  "settlement_rail": "Razorpay AP2 / X-402 Live Test",
+  "confirmed_at": "2026-09-03T12:18:03.060Z",
+  "filename": "order_order_ref_1788437848465_d574a2e6_1788437883062.json"
+}

@@ -633,6 +633,23 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
+        <!-- 🛍️ CONFIRMED ORDERS STORAGE CARD (Order_Conforms/) -->
+        <div class="card" style="border: 1px solid rgba(16, 185, 129, 0.35); background: linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.15rem;">🛍️</span>
+                    <span class="card-title" style="color: #34d399; font-weight: 700;">Confirmed Orders Cart (Order_Conforms/)</span>
+                    <span id="ordersCountBadge" style="font-size: 0.7rem; background: #065f46; color: #6ee7b7; padding: 2px 8px; border-radius: 10px; font-weight: 700; border: 1px solid #059669;">0 Orders</span>
+                </div>
+                <button id="refreshOrdersBtn" onclick="loadConfirmedOrders()" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; cursor: pointer; font-weight: 600;">
+                    🔄 Refresh Cart
+                </button>
+            </div>
+            <div id="confirmedOrdersListContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; max-height: 220px; overflow-y: auto;">
+                <div style="color: #94a3b8; font-size: 0.78rem; text-align: center; padding: 14px; grid-column: 1 / -1;">No confirmed orders yet. Complete an order to store in Order_Conforms.</div>
+            </div>
+        </div>
+
         <!-- AP2 Stored Mandates Card -->
         <div class="card">
             <div class="card-header">
@@ -791,6 +808,47 @@ app.get('/', (req, res) => {
             <div id="successModalTitle" style="color: #4f46e5; font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">Order &amp; Mandate Complete!</div>
             <div id="successModalMsg" style="color: #334155; font-size: 0.88rem; line-height: 1.5; margin-bottom: 18px;">Payment details and settlement receipt will appear here.</div>
             <button id="successModalClose" style="padding: 9px 24px; background: var(--accent-primary-gradient); border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer;">Close</button>
+        </div>
+    </div>
+
+    <!-- Confirmed Order Detail Modal -->
+    <div id="confirmedOrderModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 560px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">📦</span>
+                    <div>
+                        <div style="font-size: 1.05rem; font-weight: 800; color: #0f172a;">Confirmed Order Receipt</div>
+                        <div id="modalOrderFilename" style="font-size: 0.72rem; color: #64748b; font-family: monospace;">Order_Conforms/...</div>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('confirmedOrderModal').style.display='none'" style="background: none; border: none; font-size: 1.3rem; color: #94a3b8; cursor: pointer;">✕</button>
+            </div>
+
+            <div id="modalOrderProductInfo" style="display: flex; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; align-items: center; margin-bottom: 14px;">
+                <img id="modalOrderImg" src="" alt="Product Photo" style="width: 64px; height: 64px; object-fit: contain; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div style="flex: 1; min-width: 0;">
+                    <div id="modalOrderName" style="font-weight: 700; color: #0f172a; font-size: 0.95rem;">Product Name</div>
+                    <div id="modalOrderSku" style="font-size: 0.72rem; color: #64748b;">SKU: shoe_004</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                        <span id="modalOrderPrice" style="font-weight: 800; color: #059669; font-size: 0.95rem;">₹649 INR</span>
+                        <span style="font-size: 0.68rem; background: #065f46; color: #34d399; padding: 2px 8px; border-radius: 4px; font-weight: 800;">CONFIRMED</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #0f172a; border-radius: 8px; padding: 12px; margin-bottom: 14px; font-family: monospace; font-size: 0.75rem; color: #e2e8f0; display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">Order Ref:</span> <span id="modalOrderRef" style="color: #38bdf8;"></span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">Razorpay Payment ID:</span> <span id="modalPaymentId" style="color: #fbbf24; font-weight: 700;"></span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">Razorpay Order ID:</span> <span id="modalRzpOrderId" style="color: #cbd5e1;"></span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">Cart Mandate:</span> <span id="modalCartMandateId" style="color: #34d399;"></span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">Payment Mandate:</span> <span id="modalPaymentMandateId" style="color: #a78bfa;"></span></div>
+                <div style="display: flex; justify-content: space-between;"><span style="color: #94a3b8;">Confirmed At:</span> <span id="modalConfirmedAt" style="color: #cbd5e1;"></span></div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button onclick="document.getElementById('confirmedOrderModal').style.display='none'" style="padding: 8px 16px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.8rem; font-weight: 600; color: #475569; cursor: pointer;">Close</button>
+            </div>
         </div>
     </div>
 
@@ -1156,6 +1214,21 @@ app.get('/', (req, res) => {
                     '<button id="dashTabPay" onclick="switchDashDrawerTab(5, &quot;payment&quot;)" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#2563eb; color:#fff; cursor:pointer; font-weight:600;">💳 AP2 Payment Mandate</button>' +
                     '<button id="dashTabX402" onclick="switchDashDrawerTab(5, &quot;x402&quot;)" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#334155; color:#cbd5e1; cursor:pointer; font-weight:600;">🛡️ X-402 Challenge</button>';
                 switchDashDrawerTab(5, 'payment');
+            } else if (stageNum === 7) {
+                tabs.innerHTML = '<button onclick="loadConfirmedOrders()" style="font-size:0.72rem; padding:3px 8px; border-radius:4px; border:none; background:#059669; color:#fff; cursor:pointer; font-weight:600;">🛍️ Open Confirmed Cart</button>';
+                title.innerHTML = '✅ Stage 7: Confirmed Order Receipt (Order_Conforms/)';
+                typeLabel.innerText = 'Status: HTTP 200 OK (CONFIRMED &amp; SETTLED)';
+                const liveOrder = liveStagePayloads[7];
+                if (liveOrder) {
+                    fileRef.innerText = 'Stored in Order_Conforms/';
+                    pre.innerText = JSON.stringify(liveOrder, null, 2);
+                } else {
+                    fileRef.innerText = 'Awaiting payment confirmation';
+                    pre.innerText = JSON.stringify({
+                        status: "Awaiting execution for current query",
+                        note: "Complete payment at Stage 6 to confirm order and store in Order_Conforms/."
+                    }, null, 2);
+                }
             } else {
                 tabs.innerHTML = '';
                 title.innerHTML = '🔍 Stage ' + stageNum + ' Details';
@@ -1276,6 +1349,85 @@ app.get('/', (req, res) => {
             }
         }
 
+        // ── Confirmed Orders Cart Controller (Order_Conforms/) ──
+        async function loadConfirmedOrders() {
+            try {
+                const res = await fetch('/api/orders/confirmed');
+                const data = await res.json();
+                const container = document.getElementById('confirmedOrdersListContainer');
+                const countBadge = document.getElementById('ordersCountBadge');
+                if (!container) return;
+
+                const orders = (data && data.success && Array.isArray(data.orders)) ? data.orders : [];
+                if (countBadge) countBadge.innerText = orders.length + ' Orders';
+
+                container.innerHTML = '';
+                if (orders.length > 0) {
+                    orders.forEach(o => {
+                        const div = document.createElement('div');
+                        div.style.cssText = 'background:rgba(15,23,42,0.85); border:1px solid rgba(16,185,129,0.35); border-radius:8px; padding:10px; display:flex; gap:10px; align-items:center; transition:all 0.2s;';
+                        
+                        const item = (Array.isArray(o.items) && o.items[0]) ? o.items[0] : {};
+                        const imgSrc = item.image || 'http://localhost:5173/images/green_sneaker.png';
+                        const itemName = item.name || 'Purchased Product';
+                        const sku = item.id || item.sku || 'SKU_CONFIRMED';
+                        const price = o.amount || item.price || 0;
+                        const currency = o.currency || 'INR';
+                        const paymentId = o.payment_id || 'pay_confirmed';
+                        const confirmedTime = o.confirmed_at ? new Date(o.confirmed_at).toLocaleTimeString() : 'Recent';
+
+                        div.innerHTML = 
+                            '<img src="' + imgSrc + '" alt="' + itemName + '" style="width:52px; height:52px; object-fit:contain; background:#fff; border-radius:6px; border:1px solid #334155; padding:2px; flex-shrink:0;">' +
+                            '<div style="flex:1; min-width:0;">' +
+                                '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                                    '<span style="font-size:0.8rem; font-weight:700; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">' + itemName + '</span>' +
+                                    '<span style="font-size:0.78rem; color:#34d399; font-weight:700;">₹' + price + ' ' + currency + '</span>' +
+                                '</div>' +
+                                '<div style="font-size:0.68rem; color:#94a3b8; font-family:monospace; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + paymentId + '</div>' +
+                                '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">' +
+                                    '<span style="font-size:0.62rem; background:#065f46; color:#6ee7b7; padding:1px 6px; border-radius:4px; font-weight:700;">✅ CONFIRMED (' + confirmedTime + ')</span>' +
+                                    '<button onclick="viewConfirmedOrderModal(&quot;' + (o.filename || '') + '&quot;)" style="background:#2563eb; color:#fff; border:none; padding:2px 8px; border-radius:4px; font-size:0.68rem; cursor:pointer; font-weight:600;">🔍 View Receipt</button>' +
+                                '</div>' +
+                            '</div>';
+                        container.appendChild(div);
+                    });
+                } else {
+                    container.innerHTML = '<div style="color:#94a3b8; font-size:0.78rem; text-align:center; padding:14px; grid-column:1/-1;">No confirmed orders stored yet. Complete an order to save in Order_Conforms/.</div>';
+                }
+            } catch (err) {
+                const container = document.getElementById('confirmedOrdersListContainer');
+                if (container) container.innerHTML = '<div style="color:#ef4444; font-size:0.75rem; text-align:center; padding:10px;">Failed to load confirmed orders.</div>';
+            }
+        }
+
+        async function viewConfirmedOrderModal(filename) {
+            try {
+                const res = await fetch('/api/orders/confirmed/file/' + encodeURIComponent(filename));
+                const json = await res.json();
+                if (json.success && json.data) {
+                    const o = json.data;
+                    const modal = document.getElementById('confirmedOrderModal');
+                    const item = (Array.isArray(o.items) && o.items[0]) ? o.items[0] : {};
+                    
+                    document.getElementById('modalOrderFilename').innerText = 'Order_Conforms/' + filename;
+                    document.getElementById('modalOrderImg').src = item.image || 'http://localhost:5173/images/green_sneaker.png';
+                    document.getElementById('modalOrderName').innerText = item.name || 'Purchased Product';
+                    document.getElementById('modalOrderSku').innerText = 'SKU: ' + (item.id || item.sku || 'SKU_001') + ' • Merchant: ' + (o.merchant_name || 'Razorpay ACP Store');
+                    document.getElementById('modalOrderPrice').innerText = '₹' + (o.amount || item.price || '0') + ' ' + (o.currency || 'INR');
+                    document.getElementById('modalOrderRef').innerText = o.order_ref || o.order_id || 'N/A';
+                    document.getElementById('modalPaymentId').innerText = o.payment_id || 'N/A';
+                    document.getElementById('modalRzpOrderId').innerText = o.razorpay_order_id || 'N/A';
+                    document.getElementById('modalCartMandateId').innerText = o.cart_mandate_id || 'N/A';
+                    document.getElementById('modalPaymentMandateId').innerText = o.payment_mandate_id || 'N/A';
+                    document.getElementById('modalConfirmedAt').innerText = o.confirmed_at || 'N/A';
+
+                    modal.style.display = 'flex';
+                }
+            } catch (e) {
+                console.error('Failed to open confirmed order modal:', e);
+            }
+        }
+
         // Connect persistent tracer SSE stream
         try {
             const globalTraceEs = new EventSource('/api/tracing/stream');
@@ -1283,7 +1435,10 @@ app.get('/', (req, res) => {
                 try {
                     const data = JSON.parse(event.data);
                     if (data.type === 'reset') resetDashboardTracer();
-                    else if (data.stage) updateDashboardTracer(data.stage, data.status, data.data, data.errorReason);
+                    else if (data.stage) {
+                        updateDashboardTracer(data.stage, data.status, data.data, data.errorReason);
+                        if (data.stage === 7 && data.status === 'completed') loadConfirmedOrders();
+                    }
                 } catch(_) {}
             };
         } catch(_) {}
@@ -1362,6 +1517,10 @@ app.get('/', (req, res) => {
         loadActiveTabs();
         // Auto-poll active tabs every 2.5 seconds to keep dashboard live
         setInterval(loadActiveTabs, 2500);
+
+        // Auto-load Confirmed Orders Cart
+        loadConfirmedOrders();
+        setInterval(loadConfirmedOrders, 3000);
 
         // ── Mandates Database List ──
         async function loadMandatesList() {
@@ -1776,6 +1935,96 @@ app.get('/api/mandates/file/:filename', (req, res) => {
   }
 });
 
+// ══════════════════════════════════════════════════════════════════════
+// ORDER_CONFORMS DATABASE STORAGE HELPERS & ENDPOINTS
+// ══════════════════════════════════════════════════════════════════════
+function saveConfirmedOrder(orderData) {
+  try {
+    const orderConformsDir = path.join(__dirname, '..', 'Order_Conforms');
+    if (!fs.existsSync(orderConformsDir)) {
+      fs.mkdirSync(orderConformsDir, { recursive: true });
+    }
+    const orderRef = orderData.order_ref || orderData.order_id || ('order_ref_' + Date.now());
+    const timestamp = Date.now();
+    const filename = `order_${orderRef}_${timestamp}.json`;
+    const record = {
+      order_id: orderRef,
+      order_ref: orderRef,
+      status: 'CONFIRMED',
+      payment_id: orderData.payment_id || orderData.razorpay_payment_id || ('pay_' + timestamp),
+      razorpay_order_id: orderData.razorpay_order_id || null,
+      amount: Number(orderData.amount || 0),
+      currency: orderData.currency || 'INR',
+      items: orderData.items || (orderData.cartMandate ? orderData.cartMandate.line_items : []) || [],
+      customer_intent_id: orderData.customer_intent_id || (orderData.cartMandate ? orderData.cartMandate.parent_id : null),
+      cart_mandate_id: orderData.cart_mandate_id || (orderData.cartMandate ? orderData.cartMandate.id : null),
+      payment_mandate_id: orderData.payment_mandate_id || (orderData.paymentMandate ? orderData.paymentMandate.id : null),
+      merchant_id: orderData.merchant_id || 'merchant_acp_razorpay_001',
+      merchant_name: 'Razorpay ACP Store',
+      settlement_rail: 'Razorpay AP2 / X-402 Live Test',
+      confirmed_at: orderData.confirmed_at || new Date().toISOString(),
+      filename: filename
+    };
+    fs.writeFileSync(path.join(orderConformsDir, filename), JSON.stringify(record, null, 2), 'utf8');
+    console.log(`[Smart Router] 💾 Saved confirmed order to Order_Conforms/${filename}`);
+    return record;
+  } catch (err) {
+    console.error('[Smart Router] Failed to save confirmed order:', err.message);
+    return null;
+  }
+}
+
+function getAllConfirmedOrders() {
+  try {
+    const orderConformsDir = path.join(__dirname, '..', 'Order_Conforms');
+    if (!fs.existsSync(orderConformsDir)) return [];
+    const files = fs.readdirSync(orderConformsDir).filter(f => f.endsWith('.json'));
+    const list = [];
+    for (const f of files) {
+      try {
+        const content = JSON.parse(fs.readFileSync(path.join(orderConformsDir, f), 'utf8'));
+        const stat = fs.statSync(path.join(orderConformsDir, f));
+        list.push({
+          filename: f,
+          mtime: stat.mtime,
+          ...content
+        });
+      } catch (_) {}
+    }
+    list.sort((a, b) => new Date(b.confirmed_at || b.mtime) - new Date(a.confirmed_at || a.mtime));
+    return list;
+  } catch (err) {
+    console.error('[Smart Router] Error listing confirmed orders:', err.message);
+    return [];
+  }
+}
+
+// Endpoint: List All Confirmed Orders from Order_Conforms/
+app.get('/api/orders/confirmed', (req, res) => {
+  try {
+    const orders = getAllConfirmedOrders();
+    res.json({ success: true, count: orders.length, orders });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Endpoint: Get Specific Confirmed Order JSON from Order_Conforms/
+app.get('/api/orders/confirmed/file/:filename', (req, res) => {
+  try {
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(__dirname, '..', 'Order_Conforms', filename);
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      res.json({ success: true, filename, data });
+    } else {
+      res.status(404).json({ success: false, error: 'Confirmed order file not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Endpoint: Classify Query (no execution)
 app.post('/api/classify', async (req, res) => {
   const { query } = req.body;
@@ -2113,6 +2362,17 @@ app.post('/api/x402-settle', async (req, res) => {
     console.log(`[Smart Router] Settlement completed! Gateway Status: ${settleRes.status}`);
 
     if (settleRes.status === 200 && receipt.success) {
+      saveConfirmedOrder({
+        order_ref: receipt.order_ref,
+        amount: receipt.amount,
+        currency: receipt.currency,
+        payment_id: paymentProof.razorpay_payment_id,
+        razorpay_order_id: paymentProof.razorpay_order_id,
+        cartMandate: cartMandate,
+        paymentMandate: paymentMandate,
+        confirmed_at: receipt.confirmed_at
+      });
+
       broadcastTracingEvent({
         stage: 6,
         status: 'completed',
@@ -2186,6 +2446,17 @@ app.post('/api/x402-settle-signature', async (req, res) => {
     console.log(`[Smart Router] Live Razorpay Settlement Status: ${settleRes.status}`);
 
     if (settleRes.status === 200 && receipt.success) {
+      saveConfirmedOrder({
+        order_ref: receipt.order_ref,
+        amount: receipt.amount,
+        currency: receipt.currency,
+        payment_id: razorpay_payment_id,
+        razorpay_order_id: razorpay_order_id,
+        cartMandate: cartMandate,
+        paymentMandate: paymentMandate,
+        confirmed_at: receipt.confirmed_at
+      });
+
       broadcastTracingEvent({
         stage: 6,
         status: 'completed',

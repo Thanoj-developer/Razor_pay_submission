@@ -96,6 +96,9 @@ async function handleCheckout(req, res) {
         currency: currency,
         cart_mandate_id: cartMandate.id,
         payment_mandate_id: paymentMandate.id,
+        items: cartMandate.line_items || [],
+        customer_intent_id: cartMandate.parent_id || null,
+        merchant_id: cartMandate.merchant_id || 'merchant_acp_razorpay_001',
         nonce: nonce,
         nonce_consumed: false,
         expires_at: expiresAt,
@@ -196,6 +199,37 @@ async function handleCheckout(req, res) {
     order.razorpay_payment_id = razorpay_payment_id;
     order.confirmed_at = new Date().toISOString();
     ordersDB.set(order_ref, order);
+
+    // Persist confirmed order in Order_Conforms/
+    try {
+      const orderConformsDir = path.join(__dirname, '..', 'Order_Conforms');
+      if (!fs.existsSync(orderConformsDir)) {
+        fs.mkdirSync(orderConformsDir, { recursive: true });
+      }
+      const filename = `order_${order_ref}_${Date.now()}.json`;
+      const confirmedRecord = {
+        order_id: order_ref,
+        order_ref: order_ref,
+        status: 'CONFIRMED',
+        payment_id: razorpay_payment_id,
+        razorpay_order_id: razorpay_order_id,
+        amount: order.amount,
+        currency: order.currency,
+        items: order.items || (cartMandate ? cartMandate.line_items : []),
+        customer_intent_id: order.customer_intent_id || (cartMandate ? cartMandate.parent_id : null),
+        cart_mandate_id: order.cart_mandate_id,
+        payment_mandate_id: order.payment_mandate_id,
+        merchant_id: order.merchant_id || 'merchant_acp_razorpay_001',
+        merchant_name: 'Razorpay ACP Store',
+        settlement_rail: 'Razorpay AP2 / X-402 Live Test',
+        confirmed_at: order.confirmed_at,
+        filename: filename
+      };
+      fs.writeFileSync(path.join(orderConformsDir, filename), JSON.stringify(confirmedRecord, null, 2), 'utf8');
+      console.log(`[X402 Gateway] 💾 Confirmed order saved to Order_Conforms/${filename}`);
+    } catch (saveErr) {
+      console.error('[X402 Gateway] Failed to write Order_Conforms file:', saveErr.message);
+    }
 
     console.log(`[X402 Gateway] ✅ Payment Confirmed! Order: ${order_ref}, Payment ID: ${razorpay_payment_id}, Amount: ₹${order.amount}`);
 

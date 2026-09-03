@@ -1,0 +1,25 @@
+{
+  "order_id": "order_ref_1788438113322_7c03b7c3",
+  "order_ref": "order_ref_1788438113322_7c03b7c3",
+  "status": "CONFIRMED",
+  "payment_id": "pay_TXYwIAxZmNzj83",
+  "razorpay_order_id": "order_TXYv8o332TuGap",
+  "amount": 1999,
+  "currency": "INR",
+  "items": [
+    {
+      "id": "shoe_001",
+      "name": "Nike Air Jordan 1 Low",
+      "price": 1999,
+      "quantity": 1
+    }
+  ],
+  "customer_intent_id": "intent_1788438113288_9d7383c0",
+  "cart_mandate_id": "cart_1788438113294_97474acd",
+  "payment_mandate_id": "payment_1788438113302_ca1e2d2f",
+  "merchant_id": "merchant_acp_razorpay_001",
+  "merchant_name": "Razorpay ACP Store",
+  "settlement_rail": "Razorpay AP2 / X-402 Live Test",
+  "confirmed_at": "2026-09-03T12:23:20.289Z",
+  "filename": "order_order_ref_1788438113322_7c03b7c3_1788438200292.json"
+}
