@@ -1461,7 +1461,20 @@ app.get('/', (req, res) => {
                 const res = await fetch('/api/list-tabs', { method: 'POST' });
                 const data = await res.json();
                 if (data.success && Array.isArray(data.tabs) && data.tabs.length > 0) {
-                    tabItems = data.tabs;
+                    const hasStore = data.tabs.some(t => t.url && t.url.includes('5173'));
+                    if (!hasStore) {
+                        tabItems = [
+                            {
+                                index: 0,
+                                title: 'Razorpay ACP Store',
+                                url: 'http://localhost:5173/',
+                                isActive: true
+                            },
+                            ...data.tabs
+                        ];
+                    } else {
+                        tabItems = data.tabs;
+                    }
                 }
             } catch (_) {}
 

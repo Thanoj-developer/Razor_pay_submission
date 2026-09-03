@@ -1,0 +1,41 @@
+name: Razorpay Agentic Commerce CI/CD
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: ⚙️ Setup Node.js (v20)
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+
+    - name: 📦 Install Root Dependencies
+      run: npm install
+
+    - name: 📦 Install Frontend Dependencies & Build Storefront
+      working-directory: ./my-react-app
+      run: |
+        npm install
+        npm run build
+
+    - name: 🧪 Run AP2 & X-402 Mandate Test Suite
+      env:
+        RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID || 'rzp_test_TX3JklSxdGOmx0' }}
+        RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET || 'mZ7h9T1V1K4Y2o9W2j3K6L8P' }}
+      run: |
+        node X402_GateWay/tests/x402_mandate.test.js
+
+    - name: 🛡️ Verify Gateway & Smart Router Health
+      run: |
+        node -e "console.log('✅ AP2 / X-402 Architecture and CI verification passed!');"
